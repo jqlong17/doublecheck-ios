@@ -366,7 +366,8 @@ def cmd_fixture_test(actions):
         name = d["action"]
         dirty = [c for c in (d.get("postconditions") or [])]
         for label, path, expect_ok in (("dirty", fx["dirty"], False), ("clean", fx["clean"], True)):
-            params = dict(d.get("params") or {})
+            params = {"ops_dir": ROOT}
+            params.update(d.get("params") or {})
             params["repo"] = build_fixture(path)
             ok = True
             for item in dirty:
