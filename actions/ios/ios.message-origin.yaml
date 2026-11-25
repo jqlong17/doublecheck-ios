@@ -7,6 +7,7 @@ incident: |
   用户报「App 进不去」时，第一件事该问的是「这条消息哪来的」。
   分不清来源会在错误的一侧白查——一次四轮，一次半天。
 area: message
+domain: runtime
 requires: [macos]
 params: {}
 preconditions: []

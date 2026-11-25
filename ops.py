@@ -239,6 +239,7 @@ REQUIRED = ["schemaVersion", "action", "summary", "incident", "preconditions", "
 ALLOWED_REQUIRES = {"linux", "macos", "xcode", "keychain", "network", "systemd"}
 ALLOWED_KINDS = {"invariant", "policy", "diagnostic"}
 ALLOWED_STAGES = {"commit", "build", "test", "release", "operate"}
+ALLOWED_DOMAINS = {"quality", "delivery", "runtime", "engineering"}
 ALLOWED_AREAS = {"project", "connection", "message", "conversation", "settings", "plugin", "system"}
 
 
@@ -270,6 +271,9 @@ def lint_one(d):
     ar = d.get("area")
     if ar not in ALLOWED_AREAS:
         errs.append("area 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_AREAS)), ar))
+    dm = d.get("domain")
+    if dm not in ALLOWED_DOMAINS:
+        errs.append("domain 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_DOMAINS)), dm))
     for r in (d.get("requires") or []):
         if r not in ALLOWED_REQUIRES:
             errs.append("未知 requires: %r" % r)
@@ -444,15 +448,16 @@ def main():
     if cmd == "list":
         want = None
         for i, a in enumerate(args):
-            if a == "--domain" and i + 1 < len(args):
+            if a in ("--platform", "--domain") and i + 1 < len(args):
                 want = args[i + 1]
         cur = None
         for d in actions:
-            if want and d.get("domain") != want:
+            if want and d.get("platform") != want:
                 continue
-            if d.get("platform") != cur:
-                cur = d.get("platform")
-                print("\n[%s]" % cur)
+            key = "%s / %s" % (d.get("platform"), d.get("domain"))
+            if key != cur:
+                cur = key
+                print("\n[%s]" % key)
             kind_mark = {"invariant": "●", "policy": "◇", "diagnostic": "○"}.get(d.get("kind"), "?")
             mark = "☁ " if d.get("_source") == "cloud" else "  "
             print("  %s%s %-22s %s" % (mark, kind_mark, d["action"], d["summary"]))

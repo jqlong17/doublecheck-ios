@@ -13,11 +13,12 @@ const HTML = (stats, recent, actions) => {
   const counts = Object.fromEntries(stats.byAction.map((r) => [r.action, r]))
   const PLATFORMS = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS" }
   const STAGES = { commit: "提交前", build: "构建", test: "测试", release: "发版", operate: "运行时" }
-  const domains = {}
+  const DOMAINS = { quality: "代码质量", delivery: "交付发布", runtime: "运行时", engineering: "工程配置" }
+  const groups = {}
   for (const a of actions) {
-    domains[a.platform] = domains[a.platform] || {}
-    const st = a.stage || "operate"
-    ;(domains[a.platform][st] = domains[a.platform][st] || []).push(a)
+    groups[a.platform] = groups[a.platform] || {}
+    const dm = a.domain || "runtime"
+    ;(groups[a.platform][dm] = groups[a.platform][dm] || []).push(a)
   }
 
   const KIND = { invariant: ["●", "不变式"], policy: ["◇", "策略"], diagnostic: ["○", "诊断"] }
@@ -25,17 +26,19 @@ const HTML = (stats, recent, actions) => {
     const [sym, label] = KIND[a.kind] || ["?", a.kind]
     const AREA = { project: "工程", connection: "连接", message: "消息", conversation: "对话", settings: "设置", plugin: "插件", system: "系统" }
     const areaTag = a.area && a.area !== "project" ? ` <span class="kind">${AREA[a.area] || a.area}</span>` : ""
+    const STAGE_LABEL = { commit: "提交前", build: "构建", test: "测试", release: "发版", operate: "运行时" }
+    const stageTag = `<span class="kind">${STAGE_LABEL[a.stage] || a.stage || ""}</span>`
     const c = counts[a.id]
     const badge = c ? `<span class="pill ${c.fail ? "bad" : "ok"}">${c.total} 次${c.fail ? " · " + c.fail + " 失败" : ""}</span>` : `<span class="pill">未运行</span>`
-    return `<tr><td><div class="mono">${a.id} <span class="kind" title="${label}">${sym} ${label}</span>${areaTag}</div><div class="sub">${a.summary || ""}</div></td><td style="text-align:right;white-space:nowrap">${badge}</td></tr>`
+    return `<tr><td><div class="mono">${a.id} <span class="kind" title="${label}">${sym} ${label}</span>${stageTag}${areaTag}</div><div class="sub">${a.summary || ""}</div></td><td style="text-align:right;white-space:nowrap">${badge}</td></tr>`
   }).join("") || '<tr><td class="muted">暂无</td></tr>'
 
-  const sections = Object.entries(domains).map(([d, byStage]) => {
-    const total = Object.values(byStage).reduce((n, l) => n + l.length, 0)
-    const inner = Object.entries(byStage).map(([st, list]) =>
-      `<h2>${PLATFORMS[d] || d} · ${STAGES[st] || st} <span class="muted">· ${list.length}</span></h2><table>${actionRows(list)}</table>`
+  const sections = Object.entries(groups).map(([p, byDomain]) => {
+    const total = Object.values(byDomain).reduce((n, l) => n + l.length, 0)
+    const inner = Object.entries(byDomain).map(([dm, list]) =>
+      `<h2>${DOMAINS[dm] || dm} <span class="muted">· ${list.length}</span></h2><table>${actionRows(list)}</table>`
     ).join("")
-    return `<h1 style="margin-top:28px">${PLATFORMS[d] || d} <span class="muted">· ${total}</span></h1>${inner}`
+    return `<h1 style="margin-top:28px">${PLATFORMS[p] || p} <span class="muted">· ${total}</span></h1>${inner}`
   }).join("")
 
   return `<!doctype html>
@@ -100,13 +103,13 @@ async function getAction(env, id) {
 async function putAction(env, a) {
   const now = new Date().toISOString()
   await env.DB.prepare(
-    `INSERT INTO actions (id, platform, version, yaml, sha256, signature, summary, kind, stage, area, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+    `INSERT INTO actions (id, platform, version, yaml, sha256, signature, summary, kind, stage, area, domain, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
      ON CONFLICT(id) DO UPDATE SET platform=excluded.platform, version=excluded.version,
        yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature,
        summary=excluded.summary, kind=excluded.kind, stage=excluded.stage,
-       area=excluded.area, updated_at=excluded.updated_at`
+       area=excluded.area, domain=excluded.domain, updated_at=excluded.updated_at`
   ).bind(a.id, a.platform, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null,
-         a.kind || "invariant", a.stage || "operate", a.area || "project", now).run()
+         a.kind || "invariant", a.stage || "operate", a.area || "project", a.domain || "runtime", now).run()
   return now
 }
 
@@ -216,7 +219,7 @@ export default {
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const s = await stats(env)
       const r = await env.DB.prepare("SELECT ts, action, ok FROM events ORDER BY id DESC LIMIT 20").all()
-      const a = await env.DB.prepare("SELECT id, platform, summary, kind, stage, area FROM actions ORDER BY platform, stage, id").all()
+      const a = await env.DB.prepare("SELECT id, platform, summary, kind, stage, area, domain FROM actions ORDER BY platform, domain, id").all()
       return new Response(HTML(s, r.results || [], a.results || []), {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       })

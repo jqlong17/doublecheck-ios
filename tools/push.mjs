@@ -29,11 +29,14 @@ const items = files.map((path) => {
   const stage = sm ? sm[1] : "operate"
   const am = yaml.match(/^area:\s*(\S+)/m)
   const area = am ? am[1] : "project"
+  const dm = yaml.match(/^domain:\s*(\S+)/m)
+  const domain = dm ? dm[1] : "runtime"
   return {
     summary,
     kind,
     stage,
     area,
+    domain,
     id,
     platform,
     version: "0.1.0",

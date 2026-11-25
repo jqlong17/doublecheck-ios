@@ -7,6 +7,7 @@ incident: |
   来源判据：iOS 发出的消息末尾带两个 U+2063，Mac 不带；DSH 的 source 里没有客户端标识。
   这个常量一改，就再也分不清「手机发的还是电脑发的」——2026-11-18 因此在错误的一侧查了四轮。
 area: message
+domain: quality
 requires: []
 params:
   repo: .

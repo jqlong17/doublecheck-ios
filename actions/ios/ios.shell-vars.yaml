@@ -2,6 +2,7 @@ schemaVersion: 1
 kind: invariant
 stage: commit
 area: project
+domain: quality
 action: ios.shell-vars
 summary: shell 脚本里 $VAR 后面不能紧跟中文标点（会被当成变量名的一部分）
 incident: |

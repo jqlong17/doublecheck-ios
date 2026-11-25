@@ -2,6 +2,7 @@ schemaVersion: 1
 kind: invariant
 stage: release
 area: project
+domain: delivery
 action: ios.build-number-unique
 summary: 上传前确认 build 号没被用过（重复会判 INVALID_BINARY）
 incident: |
