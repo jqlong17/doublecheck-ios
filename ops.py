@@ -239,6 +239,7 @@ REQUIRED = ["schemaVersion", "action", "summary", "incident", "preconditions", "
 ALLOWED_REQUIRES = {"linux", "macos", "xcode", "keychain", "network", "systemd"}
 ALLOWED_KINDS = {"invariant", "policy", "diagnostic"}
 ALLOWED_STAGES = {"commit", "build", "test", "release", "operate"}
+ALLOWED_AREAS = {"project", "connection", "message", "conversation", "settings", "plugin", "system"}
 
 
 def lint_one(d):
@@ -266,6 +267,9 @@ def lint_one(d):
     st = d.get("stage")
     if st not in ALLOWED_STAGES:
         errs.append("stage 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_STAGES)), st))
+    ar = d.get("area")
+    if ar not in ALLOWED_AREAS:
+        errs.append("area 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_AREAS)), ar))
     for r in (d.get("requires") or []):
         if r not in ALLOWED_REQUIRES:
             errs.append("未知 requires: %r" % r)

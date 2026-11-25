@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: invariant
 stage: operate
+area: system
 action: tls.sni-match
 summary: 检查某个域名拿到的证书是否真的匹配它（只读）
 incident: |

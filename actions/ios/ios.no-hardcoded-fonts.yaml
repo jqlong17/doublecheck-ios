@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: policy
 stage: commit
+area: project
 action: ios.no-hardcoded-fonts
 summary: 禁止 .system(size:) 硬编码字号
 incident: |

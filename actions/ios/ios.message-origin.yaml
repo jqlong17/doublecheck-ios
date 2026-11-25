@@ -1,0 +1,18 @@
+schemaVersion: 1
+kind: diagnostic
+stage: operate
+action: ios.message-origin
+summary: 判断最近一条用户消息是手机发的还是电脑发的（只读）
+incident: |
+  用户报「App 进不去」时，第一件事该问的是「这条消息哪来的」。
+  分不清来源会在错误的一侧白查——一次四轮，一次半天。
+area: message
+requires: [macos]
+params: {}
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: python3 {{ops_dir}}/checks/message-origin.py

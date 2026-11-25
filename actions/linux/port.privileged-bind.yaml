@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: invariant
 stage: operate
+area: system
 action: port.privileged-bind
 summary: 绑定小于 1024 的端口时，systemd unit 必须保留 CAP_NET_BIND_SERVICE
 incident: |

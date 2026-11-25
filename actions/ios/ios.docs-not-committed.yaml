@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: policy
 stage: commit
+area: project
 action: ios.docs-not-committed
 summary: docs/ 一律不入库
 incident: |

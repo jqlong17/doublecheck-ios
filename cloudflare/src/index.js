@@ -23,9 +23,11 @@ const HTML = (stats, recent, actions) => {
   const KIND = { invariant: ["●", "不变式"], policy: ["◇", "策略"], diagnostic: ["○", "诊断"] }
   const actionRows = (list) => list.map((a) => {
     const [sym, label] = KIND[a.kind] || ["?", a.kind]
+    const AREA = { project: "工程", connection: "连接", message: "消息", conversation: "对话", settings: "设置", plugin: "插件", system: "系统" }
+    const areaTag = a.area && a.area !== "project" ? ` <span class="kind">${AREA[a.area] || a.area}</span>` : ""
     const c = counts[a.id]
     const badge = c ? `<span class="pill ${c.fail ? "bad" : "ok"}">${c.total} 次${c.fail ? " · " + c.fail + " 失败" : ""}</span>` : `<span class="pill">未运行</span>`
-    return `<tr><td><div class="mono">${a.id} <span class="kind" title="${label}">${sym} ${label}</span></div><div class="sub">${a.summary || ""}</div></td><td style="text-align:right;white-space:nowrap">${badge}</td></tr>`
+    return `<tr><td><div class="mono">${a.id} <span class="kind" title="${label}">${sym} ${label}</span>${areaTag}</div><div class="sub">${a.summary || ""}</div></td><td style="text-align:right;white-space:nowrap">${badge}</td></tr>`
   }).join("") || '<tr><td class="muted">暂无</td></tr>'
 
   const sections = Object.entries(domains).map(([d, byStage]) => {
@@ -98,11 +100,13 @@ async function getAction(env, id) {
 async function putAction(env, a) {
   const now = new Date().toISOString()
   await env.DB.prepare(
-    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, summary, kind, stage, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)
+    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, summary, kind, stage, area, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)
      ON CONFLICT(id) DO UPDATE SET domain=excluded.domain, version=excluded.version,
        yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature,
-       summary=excluded.summary, kind=excluded.kind, stage=excluded.stage, updated_at=excluded.updated_at`
-  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null, a.kind || "invariant", a.stage || "operate", now).run()
+       summary=excluded.summary, kind=excluded.kind, stage=excluded.stage,
+       area=excluded.area, updated_at=excluded.updated_at`
+  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null,
+         a.kind || "invariant", a.stage || "operate", a.area || "project", now).run()
   return now
 }
 
@@ -212,7 +216,7 @@ export default {
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const s = await stats(env)
       const r = await env.DB.prepare("SELECT ts, action, ok FROM events ORDER BY id DESC LIMIT 20").all()
-      const a = await env.DB.prepare("SELECT id, domain, summary, kind, stage FROM actions ORDER BY domain, stage, id").all()
+      const a = await env.DB.prepare("SELECT id, domain, summary, kind, stage, area FROM actions ORDER BY domain, stage, id").all()
       return new Response(HTML(s, r.results || [], a.results || []), {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       })

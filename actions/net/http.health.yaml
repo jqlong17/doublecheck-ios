@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: invariant
 stage: operate
+area: system
 action: http.health
 summary: 检查一个 HTTP 端点是否返回预期状态码（只读）
 incident: |

@@ -1,6 +1,7 @@
 schemaVersion: 1
 kind: invariant
 stage: operate
+area: system
 action: service.restart
 summary: 重启一个 systemd 服务，并确认端口和 HTTP 真的恢复
 incident: |
