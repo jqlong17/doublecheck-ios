@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: ios.build-number-unique
+summary: 上传前确认 build 号没被用过（重复会判 INVALID_BINARY）
+incident: |
+  发版时踩过：build 号沿用上一次，上传成功但 App Store Connect 判 INVALID_BINARY，
+  白等一轮审核才发现。这个检查直接问 ASC「这个号用过没有」，不靠人记。
+requires: [macos, network]
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 40
+    run: python3 {{ops_dir}}/checks/build-number-check.py --repo {{repo}}
