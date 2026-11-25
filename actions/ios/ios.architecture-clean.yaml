@@ -13,4 +13,4 @@ steps:
 postconditions:
   - kind: cmd.exit0
     timeout_s: 60
-    run: bash {{repo}}/scripts/check-architecture.sh
+    run: cd {{repo}} && ./scripts/check-architecture.sh
