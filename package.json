@@ -1,7 +1,7 @@
 {
-  "name": "doublecheck",
+  "name": "doublecheck-ios",
   "version": "0.1.0",
-  "description": "可审计的标准动作库：每个操作先预检、再执行、后复检",
+  "description": "写 iOS 时 AI 最容易踩的坑，一条命令全查：每个操作先预检、再执行、后复检",
   "license": "MIT",
   "type": "module",
   "bin": {

@@ -1,5 +1,5 @@
 {
-  "name": "dsh-doublecheck",
+  "name": "doublecheck-dsh",
   "version": "0.1.0",
   "description": "DSH 插件：把 doublecheck 的预检/执行/复检暴露成工具",
   "license": "MIT",

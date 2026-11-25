@@ -8,15 +8,11 @@
 ## 装
 
 ```bash
-# 1. 拿到项目
-git clone <this-repo> ~/ops        # 或者解压到任意目录
-
-# 2. 确认能跑（需要 python3 + pyyaml）
-cd ~/ops && python3 ops.py list
-
-# 3. 在你的 iOS 仓库根目录试一下
-~/ops/dc ios check --fast --repo .
+npm i -g doublecheck-ios      # 装到全局，得到 dc 命令
+dc ios check --fast --repo .  # 在你的 iOS 仓库根目录跑
 ```
+
+不想装全局也可以 `npx doublecheck-ios dc ios check --fast`，或者直接把仓库克隆到 `~/ops`（需要 python3 + PyYAML）。
 
 依赖：`python3`（3.6+）、`PyYAML`、macOS 的 `git`。
 `--fast` 不需要 Xcode；`--build` / `--release` 才需要。

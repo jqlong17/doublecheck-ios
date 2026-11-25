@@ -18,3 +18,8 @@ database_id = "e7d73982-68af-405f-a4ac-64e5ecf8f036"
 pattern = "api.notta.uk"
 zone_name = "notta.uk"
 custom_domain = true
+
+[[routes]]
+pattern = "dash.notta.uk"
+zone_name = "notta.uk"
+custom_domain = true
