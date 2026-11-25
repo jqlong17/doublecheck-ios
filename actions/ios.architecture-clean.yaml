@@ -1,0 +1,13 @@
+schemaVersion: 1
+action: ios.architecture-clean
+summary: 架构分层检查（文件行数、假拆分）必须为 0 违规
+incident: |
+  一刀切 400 行阈值逼出 197 行碎片 extension，改一个功能跳四个文件。
+  判据改成「拆了但职责没分开」，所以要用脚本而不是人眼。
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: ssh -o ConnectTimeout=6 -o BatchMode=yes ruska@100.110.191.92 'bash ~/ios-guard.sh arch'

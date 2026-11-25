@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# dc —— doublecheck 的命令行入口
+#
+#   dc list                     列出动作
+#   dc plan <action> [k=v ...]  预检
+#   dc call <action> [k=v ...] [--yes]
+#   dc verify <action> [k=v ...]
+#   dc evidence [N]             看最近的本地证据
+#   dc contribute <file.yaml>   提交一个动作到本地收件箱（有 DASH_URL 时同时上传）
+#   dc sync                     把本地证据上报（需要 DASH_URL）
+#
+# 环境变量：
+#   DASH_URL   中央服务地址，例如 https://api.ruska.cn
+#   DC_HOME    默认 ~/.doublecheck
+set -uo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DC_HOME="${DC_HOME:-$HOME/.doublecheck}"
+EVIDENCE="$DC_HOME/evidence.jsonl"
+INBOX="$DC_HOME/inbox"
+DASH_URL="${DASH_URL:-}"
+
+mkdir -p "$DC_HOME" "$INBOX"
+
+case "${1:-}" in
+  list|plan|call|verify)
+    exec python3 "$HERE/ops.py" "$@"
+    ;;
+  evidence)
+    n="${2:-10}"
+    if [ ! -f "$EVIDENCE" ]; then echo "（还没有证据）"; exit 0; fi
+    tail -n "$n" "$EVIDENCE"
+    ;;
+  contribute)
+    f="${2:?用法: dc contribute <file.yaml>}"
+    [ -f "$f" ] || { echo "找不到 $f"; exit 2; }
+    cp "$f" "$INBOX/$(basename "$f")"
+    echo "已放入本地收件箱: $INBOX/$(basename "$f")"
+    if [ -n "$DASH_URL" ]; then
+      code=$(curl -sS -m 10 -o /dev/null -w '%{http_code}' -X POST \
+        -H 'content-type: application/x-yaml' --data-binary "@$f" "$DASH_URL/v1/submissions" 2>/dev/null)
+      echo "上传: HTTP ${code:-失败}"
+    else
+      echo "（未配置 DASH_URL，仅本地留存；下次 sync 时可一并上报）"
+    fi
+    ;;
+  sync)
+    if [ -z "$DASH_URL" ]; then echo "需要 DASH_URL"; exit 2; fi
+    if [ ! -s "$EVIDENCE" ]; then echo "没有待上报的证据"; exit 0; fi
+    code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST \
+      -H 'content-type: application/x-ndjson' --data-binary "@$EVIDENCE" \
+      "$DASH_URL/v1/evidence" 2>/dev/null)
+    if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+      mv "$EVIDENCE" "$EVIDENCE.sent-$(date +%s)"
+      echo "上报成功（HTTP $code），本地队列已归档"
+    else
+      echo "上报失败：HTTP ${code:-无响应}，证据保留在本地"
+      exit 1
+    fi
+    ;;
+  *)
+    sed -n '2,20p' "${BASH_SOURCE[0]}"
+    exit 2
+    ;;
+esac

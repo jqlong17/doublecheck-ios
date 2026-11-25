@@ -1,0 +1,13 @@
+schemaVersion: 1
+action: ios.no-hardcoded-fonts
+summary: 禁止 .system(size:) 硬编码字号
+incident: |
+  交互规范明确禁止：硬编码字号在动态字体和不同设备上会不一致。
+  人眼 review 经常漏，所以做成机器检查。
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: ssh -o ConnectTimeout=6 -o BatchMode=yes ruska@100.110.191.92 'bash ~/ios-guard.sh fonts'

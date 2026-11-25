@@ -1,0 +1,13 @@
+schemaVersion: 1
+action: ios.docs-not-committed
+summary: docs/ 一律不入库
+incident: |
+  2026-11-21 用户明确：docs 下的调研、宣传、参考源码只留本地，整体 gitignore。
+  这条只有机器能守住——人一顺手就 git add 了。
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 20
+    run: ssh -o ConnectTimeout=6 -o BatchMode=yes ruska@100.110.191.92 'bash ~/ios-guard.sh docs-leak'

@@ -99,3 +99,39 @@ bash ci/check.sh
 - [ ] registry（按栈分类、可检索）
 - [ ] MCP server 封装
 - [ ] 服务端判定（规则下发端 + 客户端采集）
+
+## MCP / 插件
+
+```bash
+node mcp/server.mjs          # stdio MCP server
+```
+
+客户端配置（Claude Code / Cursor / 任何 MCP 客户端）：
+
+```json
+"doublecheck": { "command": "node", "args": ["/root/ops/mcp/server.mjs"] }
+```
+
+暴露四个工具：`dc_list` / `dc_plan` / `dc_call` / `dc_verify`。
+**instructions 里写死了一条契约**：先 plan 再 call，call 完必须 verify。
+
+## 反馈闭环（本地沉淀 → 中央聚合）
+
+```
+dc call/verify  ──写──►  ~/.doublecheck/evidence.jsonl   （本地队列）
+dc contribute   ──►  ~/.doublecheck/inbox/              （本地收件箱）
+dc sync         ──►  DASH_URL/v1/evidence               （上报，成功后归档本地队列）
+```
+
+本地服务用于验证（之后平移到 Cloudflare Workers + D1）：
+
+```bash
+node mcp/dash.mjs 8790        # GET /v1/actions, POST /v1/evidence, GET /v1/stats
+DASH_URL=http://127.0.0.1:8790 ./dc sync
+```
+
+设计约束：
+
+- **证据只含**：动作 id、结果、耗时、参数键名。不含主机名、路径内容、输出原文
+- **离线优先**：上报失败不影响执行，队列留在本地
+- **不自动合并**：contribute 只是投递，是否入库由中央 CI 决定

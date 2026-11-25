@@ -223,8 +223,12 @@ def lint_one(d):
 
 
 # ---------------- 执行 ----------------
-def check_all(items, params, title):
-    print("  %s：" % title)
+QUIET = False
+
+
+def check_all(items, params, title, collect=None):
+    if not QUIET:
+        print("  %s：" % title)
     ok_all = True
     for item in items:
         spec = fill(item, params)
@@ -235,12 +239,25 @@ def check_all(items, params, title):
         except Exception as e:  # noqa: BLE001
             ok, msg = False, "异常: %s" % e
         ms = int((time.time() - t0) * 1000)
-        print("    %s %-28s %s (%dms)" % ("✅" if ok else "❌", spec["kind"], msg, ms))
+        if not QUIET:
+            print("    %s %-28s %s (%dms)" % ("✅" if ok else "❌", spec["kind"], msg, ms))
+        if collect is not None:
+            collect.append({"kind": spec["kind"], "ok": bool(ok), "msg": msg, "ms": ms})
         ok_all = ok_all and ok
     return ok_all
 
 
-def do_plan(d, params):
+def do_plan(d, params, as_json=False):
+    global QUIET
+    QUIET = as_json
+    collected = []
+    if as_json:
+        ok = check_all(d["preconditions"], params, "前置条件", collected)
+        print(json.dumps({"action": d["action"], "ok": ok, "checks": collected,
+                          "steps": [fill(x, params) for x in d["steps"]],
+                          "rollback": [fill(x, params) for x in (d.get("rollback") or [])]},
+                         ensure_ascii=False))
+        return 0 if ok else 1
     print("动作：%s" % d["action"])
     print("  %s" % d["summary"])
     print("  来源：%s" % str(d["incident"]).strip().splitlines()[0][:100])
@@ -284,8 +301,13 @@ def do_call(d, params, yes):
     return 0 if ok else 1
 
 
-def do_verify(d, params):
-    ok = check_all(d["postconditions"], params, "后置断言")
+def do_verify(d, params, as_json=False):
+    global QUIET
+    QUIET = as_json
+    collected = []
+    ok = check_all(d["postconditions"], params, "后置断言", collected)
+    if as_json:
+        print(json.dumps({"action": d["action"], "ok": ok, "checks": collected}, ensure_ascii=False))
     return 0 if ok else 1
 
 
@@ -322,6 +344,7 @@ def main():
     name = args[1]
     rest = args[2:]
     yes = "--yes" in rest
+    as_json = "--json" in rest
     params = {}
     for a in rest:
         if "=" in a and not a.startswith("-"):
@@ -336,11 +359,11 @@ def main():
     params = merged
 
     if cmd == "plan":
-        return do_plan(target, params)
+        return do_plan(target, params, as_json)
     if cmd == "call":
         return do_call(target, params, yes)
     if cmd == "verify":
-        return do_verify(target, params)
+        return do_verify(target, params, as_json)
     print("未知命令 %s" % cmd)
     return 2
 
