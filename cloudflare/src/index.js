@@ -61,6 +61,25 @@ ${recent.map((r) => `<tr><td class="mono">${String(r.ts).replace("T", " ").repla
 <script>setTimeout(()=>location.reload(), 30000)</script>
 </body></html>`
 
+async function listActions(env) {
+  const r = await env.DB.prepare("SELECT id, domain, version, sha256, updated_at FROM actions ORDER BY domain, id").all()
+  return r.results || []
+}
+
+async function getAction(env, id) {
+  return env.DB.prepare("SELECT id, domain, version, yaml, sha256 FROM actions WHERE id = ?").bind(id).first()
+}
+
+async function putAction(env, a) {
+  const now = new Date().toISOString()
+  await env.DB.prepare(
+    `INSERT INTO actions (id, domain, version, yaml, sha256, updated_at) VALUES (?,?,?,?,?,?)
+     ON CONFLICT(id) DO UPDATE SET domain=excluded.domain, version=excluded.version,
+       yaml=excluded.yaml, sha256=excluded.sha256, updated_at=excluded.updated_at`
+  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, now).run()
+  return now
+}
+
 async function stats(env) {
   const byAction = await env.DB.prepare(
     "SELECT action, SUM(ok) AS ok, SUM(1-ok) AS fail, COUNT(*) AS total FROM events GROUP BY action ORDER BY total DESC LIMIT 50"
@@ -102,6 +121,38 @@ export default {
     }
 
     if (url.pathname === "/v1/stats") return json(200, await stats(env))
+
+    if (url.pathname === "/v1/actions" && request.method === "GET") {
+      // ?full=1 一次返回全部 YAML：国内到 CF 的往返很贵，14 个请求会超时
+      if (url.searchParams.get("full") === "1") {
+        const r = await env.DB.prepare("SELECT id, domain, version, yaml, sha256 FROM actions ORDER BY domain, id").all()
+        return json(200, { actions: r.results || [] })
+      }
+      return json(200, { actions: await listActions(env) })
+    }
+
+    if (url.pathname.startsWith("/v1/actions/") && request.method === "GET") {
+      const id = decodeURIComponent(url.pathname.slice("/v1/actions/".length))
+      const a = await getAction(env, id)
+      return a ? json(200, a) : json(404, { error: "action not found" })
+    }
+
+    if (url.pathname === "/v1/actions" && request.method === "POST") {
+      // 只允许用 meta 表里的 push_token 推送，避免任何人改库
+      const token = (request.headers.get("authorization") || "").replace("Bearer ", "")
+      const expect = await env.DB.prepare("SELECT value FROM meta WHERE key='push_token'").first()
+      if (!expect?.value || token !== expect.value) return json(401, { error: "unauthorized" })
+      let b
+      try { b = await request.json() } catch { return json(400, { error: "invalid json" }) }
+      const items = Array.isArray(b) ? b : [b]
+      let n = 0
+      for (const a of items) {
+        if (!a.id || !a.yaml || !a.sha256) continue
+        await putAction(env, a)
+        n++
+      }
+      return json(200, { accepted: n })
+    }
 
     if (url.pathname === "/v1/recent") {
       const r = await env.DB.prepare(

@@ -202,13 +202,35 @@ STEPS = {
 
 # ---------------- 加载与校验 ----------------
 def load_actions():
-    """动作放在 actions/<domain>/<name>.yaml；domain 由目录推导，避免和字段写不一致。"""
+    """动作来源有两处：
+
+    1. 仓库内的 actions/<domain>/<name>.yaml（作者自己写的，优先级高）
+    2. ~/.doublecheck/actions/<domain>/<name>.yaml（dc pull 拉下来的云端版本）
+    domain 由目录推导，避免和字段写不一致。
+    """
     out = []
+    seen = set()
     for path in sorted(glob.glob(os.path.join(ACTIONS, "*", "*.yaml"))):
         with open(path, encoding="utf-8") as f:
             d = yaml.safe_load(f)
         d["_path"] = path
         d["domain"] = os.path.basename(os.path.dirname(path))
+        d["_source"] = "local"
+        out.append(d)
+        seen.add(d["action"])
+
+    cache = os.path.expanduser("~/.doublecheck/actions")
+    for path in sorted(glob.glob(os.path.join(cache, "*", "*.yaml"))):
+        try:
+            with open(path, encoding="utf-8") as f:
+                d = yaml.safe_load(f)
+        except Exception:  # noqa: BLE001
+            continue
+        if d.get("action") in seen:      # 本地同名动作优先
+            continue
+        d["_path"] = path
+        d["domain"] = os.path.basename(os.path.dirname(path))
+        d["_source"] = "cloud"
         out.append(d)
     return out
 
@@ -406,7 +428,8 @@ def main():
             if d.get("domain") != cur:
                 cur = d.get("domain")
                 print("\n[%s]" % cur)
-            print("  %-24s %s" % (d["action"], d["summary"]))
+            mark = "☁ " if d.get("_source") == "cloud" else "  "
+            print("  %s%-22s %s" % (mark, d["action"], d["summary"]))
         return 0
 
     if cmd == "fixture-test":

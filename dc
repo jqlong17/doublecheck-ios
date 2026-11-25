@@ -7,6 +7,8 @@
 #   dc verify <action> [k=v ...]
 #   dc evidence [N]             看最近的本地证据
 #   dc ios check --fast|--build|--release   按时机跑 iOS 域检查
+#   dc pull                     从云端拉动作到本地缓存
+#   dc push                     把本地动作推到云端（需要 DC_PUSH_TOKEN）
 #   dc extract                  从 worklog 的 incident/fix 提炼候选动作
 #   dc contribute <file.yaml>   提交一个动作到本地收件箱（有 DASH_URL 时同时上传）
 #   dc sync                     把本地证据上报（需要 DASH_URL）
@@ -67,6 +69,12 @@ PY2
   ios)
     shift
     exec python3 "$HERE/tools/ios-check.py" "$@"
+    ;;
+  push)
+    exec python3 "$HERE/tools/push-actions.py"
+    ;;
+  pull)
+    exec python3 "$HERE/tools/pull-actions.py"
     ;;
   extract)
     exec python3 "$HERE/tools/extract-from-worklog.py"
