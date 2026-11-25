@@ -19,6 +19,8 @@ for f in actions/*/*.yaml; do
   fi
   if grep -q "^fixture:" "$f"; then
     echo "✅ plan 通过（fixture 阶段验证）"
+  elif grep -qE "^requires:.*(macos|xcode|keychain)" "$f"; then
+    echo "✅ plan 通过（需要 macOS，由开发机执行）"
   elif grep -q "repo:" "$f"; then
     echo "✅ plan 通过（依赖目标仓库，由使用者本机执行）"
   elif grep -qE "kind: (systemd\.restart|systemd\.start|fs\.prune|cmd\.run)" "$f"; then
