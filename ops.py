@@ -122,6 +122,19 @@ def p_cert_expiry_days(spec):
         return False, "取证书失败: %s" % str(e)[:60]
 
 
+def p_tls_hostname(spec):
+    host, port = spec["host"], int(spec.get("port", 443))
+    try:
+        ctx = ssl.create_default_context()
+        with socket.create_connection((host, port), timeout=8) as sock:
+            with ctx.wrap_socket(sock, server_hostname=host) as ss:
+                cert = ss.getpeercert()
+        ssl.match_hostname(cert, host)
+        return True, "证书匹配 %s" % host
+    except Exception as e:  # noqa: BLE001
+        return False, "证书不匹配或握手失败: %s" % str(e)[:60]
+
+
 def p_cmd_exit0(spec):
     rc, out = _run(spec["run"], timeout=spec.get("timeout_s", 30))
     return rc == 0, (out.splitlines()[-1][:90] if out else "退出码 %d" % rc)
@@ -136,6 +149,7 @@ PREDICATES = {
     "disk.free_mb_gt": p_disk_free_mb_gt,
     "file.exists": p_file_exists,
     "cert.expiry_days": p_cert_expiry_days,
+    "tls.hostname_matches": p_tls_hostname,
     "cmd.exit0": p_cmd_exit0,
 }
 

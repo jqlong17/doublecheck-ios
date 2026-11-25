@@ -6,6 +6,7 @@
 #   dc call <action> [k=v ...] [--yes]
 #   dc verify <action> [k=v ...]
 #   dc evidence [N]             看最近的本地证据
+#   dc extract                  从 worklog 的 incident/fix 提炼候选动作
 #   dc contribute <file.yaml>   提交一个动作到本地收件箱（有 DASH_URL 时同时上传）
 #   dc sync                     把本地证据上报（需要 DASH_URL）
 #
@@ -22,8 +23,37 @@ DASH_URL="${DASH_URL:-}"
 mkdir -p "$DC_HOME" "$INBOX"
 
 case "${1:-}" in
-  list|plan|call|verify)
+  list|plan)
     exec python3 "$HERE/ops.py" "$@"
+    ;;
+  call|verify)
+    # 执行/复检后，把结果同时写进 worklog 的 journal（同一份审计链）
+    out=$(python3 "$HERE/ops.py" "$@" 2>&1); rc=$?
+    printf '%s\n' "$out"
+    if [ "${DC_JOURNAL:-1}" = "1" ] && [ -d "${WORKLOG:-/root/worklog}" ]; then
+      python3 - "$1" "$2" "$rc" <<'PY2' || true
+import json, os, sys, datetime
+cmd, action, rc = sys.argv[1], sys.argv[2], sys.argv[3]
+wl = os.environ.get("WORKLOG", "/root/worklog")
+day = datetime.datetime.now().strftime("%Y-%m-%d")
+os.makedirs(os.path.join(wl, day), exist_ok=True)
+row = {
+    "at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+    "kind": "action",
+    "scope": "cross-session",
+    "summary": "doublecheck %s %s → %s" % (cmd, action, "成功" if rc == "0" else "失败"),
+    "author": {"id": os.environ.get("DC_AGENT_ID", "aliyun:web"), "agent": "web", "node": "aliyun",
+               "sessionId": os.environ.get("DSH_SESSION_ID", ""), "profile": os.environ.get("DSH_PROFILE", "")},
+    "detail": "由 dc %s 触发；结果码 %s；证据同时写入 ~/.doublecheck/evidence.jsonl" % (cmd, rc),
+}
+with open(os.path.join(wl, day, "journal.jsonl"), "a", encoding="utf-8") as f:
+    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+PY2
+    fi
+    exit $rc
+    ;;
+  extract)
+    exec python3 "$HERE/tools/extract-from-worklog.py"
     ;;
   evidence)
     n="${2:-10}"

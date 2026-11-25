@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: port.owner
+summary: 查某个端口被谁占用、绑在哪个地址（只读诊断）
+incident: |
+  2026-11-23：tailscale serve 想绑 443，被 nginx 占着，日志刷了几千次 bind 失败，
+  请求全落到错误证书上。当时是「先猜再查」，正确做法是先问一句「谁在占这个端口」。
+requires: [linux]
+params:
+  port: 443
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 15
+    run: ss -lntp 2>/dev/null | grep ":{{port}} " || echo "端口 {{port}} 当前没有监听"

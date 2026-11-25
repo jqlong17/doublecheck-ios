@@ -1,0 +1,18 @@
+schemaVersion: 1
+action: ios.sim-build
+summary: 在模拟器上编译 App（不签名），确认改动能通过编译
+incident: |
+  2026-11-25：改完 UI 后只跑了 swift test，没验证 App 能否编译，
+  直到上传前才发现工程文件漏了注册。编译是最便宜的一道门。
+requires: [macos, xcode]
+params:
+  repo: .
+  derived: /tmp/dc-sim-dd
+preconditions: []
+steps:
+  - kind: cmd.run
+    timeout_s: 900
+    run: cd {{repo}} && xcodebuild -project DSHPocket.xcodeproj -scheme DSHPocket -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath {{derived}} build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -3
+postconditions:
+  - kind: file.exists
+    path: "{{derived}}/Build/Products/Debug-iphonesimulator/DSHPocket.app"

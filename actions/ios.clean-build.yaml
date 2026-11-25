@@ -1,0 +1,18 @@
+schemaVersion: 1
+action: ios.clean-build
+summary: 全新构建（清 derivedData），用于验证改了 DSHKit 之后的行为
+incident: |
+  2026-11-12：源码已修，但增量构建继续链接旧的包产物，
+  真机上仍然是旧二进制，闪退「修了还在」。改本地 Swift Package 后必须全新构建。
+requires: [macos, xcode]
+params:
+  repo: .
+  derived: /tmp/dc-fresh-dd
+preconditions: []
+steps:
+  - kind: cmd.run
+    timeout_s: 1200
+    run: rm -rf {{derived}} && cd {{repo}} && xcodebuild -project DSHPocket.xcodeproj -scheme DSHPocket -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath {{derived}} build CODE_SIGNING_ALLOWED=NO 2>&1 | tail -3
+postconditions:
+  - kind: file.exists
+    path: "{{derived}}/Build/Products/Debug-iphonesimulator/DSHPocket.app"

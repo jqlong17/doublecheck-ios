@@ -1,0 +1,17 @@
+schemaVersion: 1
+action: tls.sni-match
+summary: 检查某个域名拿到的证书是否真的匹配它（只读）
+incident: |
+  2026-11-23：8443 端点的请求落到 nginx 的 ruska.cn 证书上，
+  客户端报「证书名不匹配」。光看端口通不通没用，必须校验证书对的是谁。
+requires: [network]
+params:
+  host: ruska.cn
+  port: 443
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: tls.hostname_matches
+    host: "{{host}}"
+    port: "{{port}}"

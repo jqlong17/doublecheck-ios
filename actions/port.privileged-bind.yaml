@@ -1,0 +1,17 @@
+schemaVersion: 1
+action: port.privileged-bind
+summary: 绑定小于 1024 的端口时，systemd unit 必须保留 CAP_NET_BIND_SERVICE
+incident: |
+  2026-11-23：derper 加固时把 CapabilityBoundingSet 设成空，
+  而它要绑 444（特权端口），于是启动即 bind: permission denied，崩溃循环。
+requires: [linux]
+params:
+  port: 444
+  unit_file: /etc/systemd/system/derper.service
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 10
+    run: p={{port}}; f={{unit_file}}; if [ "$p" -lt 1024 ]; then grep -q 'CAP_NET_BIND_SERVICE' "$f" || { echo "端口 $p 小于 1024，但 $f 没保留 CAP_NET_BIND_SERVICE"; exit 1; }; fi; echo "端口 $p 的权限配置正确"
