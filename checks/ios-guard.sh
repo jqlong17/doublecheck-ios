@@ -79,8 +79,36 @@ PY2
     [ "$bad" = "0" ] && echo "shell 变量写法安全"
     exit $bad
     ;;
+  gitignore-artifacts)
+    # 构建产物不该进仓库：DerivedData / build / xcuserdata / .DS_Store
+    gitdir=$(git rev-parse --git-dir 2>/dev/null) || { echo "不是 git 仓库"; exit 2; }
+    missing=""
+    for pat in DerivedData build/ xcuserdata .DS_Store; do
+      grep -q "$pat" .gitignore 2>/dev/null || missing="$missing $pat"
+    done
+    tracked=$(git ls-files | grep -E '(^|/)(DerivedData|build|xcuserdata)/|\.DS_Store$' | head -3)
+    if [ -n "$tracked" ]; then
+      echo "构建产物被提交了："
+      printf '%s\n' "$tracked"
+      exit 1
+    fi
+    if [ -n "$missing" ]; then
+      echo ".gitignore 缺少：$missing"
+      exit 1
+    fi
+    echo "构建产物已被忽略"
+    ;;
+  secret-files-ignored)
+    tracked=$(git ls-files | grep -E '(\.p8|\.p12|\.key|\.pem|(^|/)\.env)$' | head -3)
+    if [ -n "$tracked" ]; then
+      echo "凭证文件被提交了："
+      printf '%s\n' "$tracked"
+      exit 1
+    fi
+    echo "没有凭证文件被跟踪"
+    ;;
   *)
-    echo "用法: ios-guard.sh {pbxproj|arch|fonts|docs-leak|secrets|shell-vars}"
+    echo "用法: ios-guard.sh {pbxproj|arch|fonts|docs-leak|secrets|shell-vars|gitignore-artifacts|secret-files-ignored}"
     exit 2
     ;;
 esac

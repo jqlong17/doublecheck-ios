@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: release
+area: project
+domain: delivery
+action: ios.export-options-valid
+summary: ExportOptions.plist 的 method 必须是当前 Xcode 接受的值
+incident: |
+  Xcode 15 起把 app-store 改成 app-store-connect，旧值导出直接报错。
+  这类「工具链改了、配置没跟上」的问题，每次升级 Xcode 都要踩一遍。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 20
+    run: python3 {{ops_dir}}/checks/export-options-check.py {{repo}}

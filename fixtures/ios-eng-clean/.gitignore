@@ -1,0 +1,11 @@
+DerivedData/
+build/
+xcuserdata/
+.DS_Store
+
+# 凭证
+*.p8
+*.p12
+*.key
+*.pem
+.env

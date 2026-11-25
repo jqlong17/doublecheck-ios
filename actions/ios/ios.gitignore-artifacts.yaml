@@ -1,0 +1,23 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: engineering
+action: ios.gitignore-artifacts
+summary: 构建产物（DerivedData/build/xcuserdata）不能进仓库
+incident: |
+  构建产物一旦被提交，仓库体积暴涨、diff 全是二进制，
+  更糟的是回滚代码时把旧产物也带回来——本地表现成「改了没生效」。
+requires: []
+params:
+  repo: .
+fixture:
+  dirty: /root/ops/fixtures/ios-eng-dirty
+  clean: /root/ops/fixtures/ios-eng-clean
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 20
+    run: bash {{ops_dir}}/checks/ios-guard.sh gitignore-artifacts {{repo}}
