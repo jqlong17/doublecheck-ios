@@ -1,0 +1,19 @@
+schemaVersion: 1
+action: ios.shell-vars
+summary: shell 脚本里 $VAR 后面不能紧跟中文标点（会被当成变量名的一部分）
+incident: |
+  2026-11-25 一天踩了三次：`$RESULT）` 被 bash 当成变量名的一部分，
+  报 unbound variable。必须写成 `${RESULT}）`。人眼几乎看不出来。
+requires: []
+params:
+  repo: .
+fixture:
+  dirty: /root/ops/fixtures/ios-dirty-secrets
+  clean: /root/ops/fixtures/ios-clean-secrets
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: bash {{ops_dir}}/checks/ios-guard.sh shell-vars {{repo}}

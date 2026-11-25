@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: ios.l10n-ratchet
+summary: 本地化棘轮——不允许新增未翻译的中文字面量
+incident: |
+  2026-11-25 统计：321 条 L10n 字面量里 97 条没有英文映射，英文用户会看到中文。
+  一次性补齐成本高，所以用棘轮：现存缺口记进 baseline，只拦新增。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: cd {{repo}} && python3 scripts/check-l10n.py

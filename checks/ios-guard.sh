@@ -50,8 +50,37 @@ case "$cmd" in
     # 版本号与 App Store Connect 已有 build 是否重复（需要 API key，慢，默认不跑）
     echo "跳过：需要 ASC 凭据"
     ;;
+  secrets)
+    # 硬性禁止：公网地址、token、私钥进代码或日志
+    hits=$(grep -rnE '(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)' \
+      --include='*.swift' --include='*.sh' --include='*.js' --include='*.py' --include='*.json' --include='*.yml' --include='*.yaml' \
+      . 2>/dev/null | grep -v '/\.git/' || true)
+    if [ -n "$hits" ]; then
+      echo "发现疑似凭证："
+      printf '%s\n' "$hits" | head -5
+      exit 1
+    fi
+    echo "没有发现疑似凭证"
+    ;;
+  shell-vars)
+    # $VAR 后面紧跟中文/全角标点时，bash 会把多字节字符算进变量名
+    bad=0
+    for f in $(git ls-files '*.sh' 2>/dev/null); do
+      if python3 - "$f" <<'PY2'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8", errors="ignore").read()
+bad = [m.group(0) for m in re.finditer(r"\$[A-Za-z_][A-Za-z0-9_]*(?=[^\x00-\x7F])", src)]
+if bad:
+    print("%s: %s" % (sys.argv[1], bad[:3]))
+sys.exit(1 if bad else 0)
+PY2
+      then :; else bad=1; fi
+    done
+    [ "$bad" = "0" ] && echo "shell 变量写法安全"
+    exit $bad
+    ;;
   *)
-    echo "用法: ios-guard.sh {pbxproj|arch|fonts|docs-leak}"
+    echo "用法: ios-guard.sh {pbxproj|arch|fonts|docs-leak|secrets|shell-vars}"
     exit 2
     ;;
 esac

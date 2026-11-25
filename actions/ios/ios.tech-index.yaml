@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: ios.tech-index
+summary: TECH_INDEX.md 里每条「文件 · 符号」必须仍然存在
+incident: |
+  2026-11-22：照着过时的 TECH_INDEX 去找符号，找不到就凭直觉猜，
+  得出「本地图片不能显示」这个错误结论，白查半天。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: cd {{repo}} && ./scripts/check-tech-index.sh

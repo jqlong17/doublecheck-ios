@@ -1,0 +1,18 @@
+schemaVersion: 1
+action: ios.ui-tests-gate
+summary: 发版前必须真跑 UI 测试，跳过的用例单独报出来
+incident: |
+  2026-11-25 决策：UI 测试从「告警」提为「阻断」。跳过的用例等于没测，
+  所以要求结果里 skipped=0，而不只是 exit code 为 0。
+requires: [macos, xcode]
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: cmd.run
+    timeout_s: 1800
+    run: cd {{repo}} && ./scripts/check-ui-tests.sh
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: cd {{repo}} && echo "UI 测试门禁通过（skipped=0 由脚本保证）"

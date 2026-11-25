@@ -1,0 +1,21 @@
+schemaVersion: 1
+action: ios.proxy-off-before-upload
+summary: 上传 App Store 前必须确认系统代理已关闭
+incident: |
+  发版流程里踩过：开着 Clash 的系统代理上传，altool 卡在握手或报网络错误。
+  上传前关代理、push 完再开回来——这一步靠人记，所以做成动作。
+requires: [macos]
+params:
+  service: Wi-Fi
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 15
+    run: |
+      if networksetup -getwebproxy {{service}} 2>/dev/null | grep -q "Enabled: Yes"; then
+        echo "代理仍开着，上传前请先关闭"
+        exit 1
+      fi
+      echo "系统代理未开启，可以上传"
