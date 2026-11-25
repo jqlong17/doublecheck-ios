@@ -9,7 +9,7 @@ python3 ops.py lint || fail=1
 
 echo
 echo "== 2/2 每个动作 =="
-for f in actions/*.yaml; do
+for f in actions/*/*.yaml; do
   a=$(basename "$f" .yaml)
   printf '%-18s ' "$a"
   if ! python3 ops.py plan "$a" >/dev/null 2>&1; then

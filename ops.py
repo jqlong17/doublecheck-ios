@@ -202,11 +202,13 @@ STEPS = {
 
 # ---------------- 加载与校验 ----------------
 def load_actions():
+    """动作放在 actions/<domain>/<name>.yaml；domain 由目录推导，避免和字段写不一致。"""
     out = []
-    for path in sorted(glob.glob(os.path.join(ACTIONS, "*.yaml"))):
+    for path in sorted(glob.glob(os.path.join(ACTIONS, "*", "*.yaml"))):
         with open(path, encoding="utf-8") as f:
             d = yaml.safe_load(f)
         d["_path"] = path
+        d["domain"] = os.path.basename(os.path.dirname(path))
         out.append(d)
     return out
 
@@ -275,7 +277,7 @@ def do_plan(d, params, as_json=False):
     collected = []
     if as_json:
         ok = check_all(d["preconditions"], params, "前置条件", collected)
-        print(json.dumps({"action": d["action"], "ok": ok, "checks": collected,
+        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok, "checks": collected,
                           "steps": [fill(x, params) for x in d["steps"]],
                           "rollback": [fill(x, params) for x in (d.get("rollback") or [])]},
                          ensure_ascii=False))
@@ -298,7 +300,7 @@ def do_plan(d, params, as_json=False):
 
 
 def do_call(d, params, yes):
-    if not do_plan(d, params):
+    if do_plan(d, params) != 0:   # 注意：0 才是通过（之前的 not 判断反了，一执行就中止）
         print("中止：前置条件不满足")
         return 1
     if not yes:
@@ -329,7 +331,7 @@ def do_verify(d, params, as_json=False):
     collected = []
     ok = check_all(d["postconditions"], params, "后置断言", collected)
     if as_json:
-        print(json.dumps({"action": d["action"], "ok": ok, "checks": collected}, ensure_ascii=False))
+        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok, "checks": collected}, ensure_ascii=False))
     return 0 if ok else 1
 
 
@@ -392,8 +394,18 @@ def main():
     actions = load_actions()
 
     if cmd == "list":
+        want = None
+        for i, a in enumerate(args):
+            if a == "--domain" and i + 1 < len(args):
+                want = args[i + 1]
+        cur = None
         for d in actions:
-            print("%-22s %s" % (d["action"], d["summary"]))
+            if want and d.get("domain") != want:
+                continue
+            if d.get("domain") != cur:
+                cur = d.get("domain")
+                print("\n[%s]" % cur)
+            print("  %-24s %s" % (d["action"], d["summary"]))
         return 0
 
     if cmd == "fixture-test":

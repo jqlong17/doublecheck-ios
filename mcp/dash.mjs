@@ -30,13 +30,20 @@ function body(req) {
 }
 
 function actionsIndex() {
-  const dir = join(import.meta.dirname, "..", "actions")
-  if (!existsSync(dir)) return []
-  return readdirSync(dir).filter((f) => f.endsWith(".yaml")).map((f) => {
-    const text = readFileSync(join(dir, f), "utf8")
+  const root = join(import.meta.dirname, "..", "actions")
+  if (!existsSync(root)) return []
+  const files = []
+  for (const dom of readdirSync(root)) {
+    const dir = join(root, dom)
+    if (!existsSync(dir)) continue
+    for (const f of readdirSync(dir)) if (f.endsWith(".yaml")) files.push([dom, join(dir, f)])
+  }
+  return files.map(([dom, path]) => {
+    const f = path
+    const text = readFileSync(path, "utf8")
     const id = (text.match(/^action:\s*(\S+)/m) || [])[1] || f
     const summary = (text.match(/^summary:\s*(.+)$/m) || [])[1] || ""
-    return { id, summary, version: "0.1.0", status: "verified" }
+    return { id, domain: dom, summary, version: "0.1.0", status: "verified" }
   })
 }
 
