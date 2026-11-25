@@ -16,4 +16,4 @@ steps:
 postconditions:
   - kind: cmd.exit0
     timeout_s: 20
-    run: bash /root/ops/checks/ios-guard.sh docs-leak {{repo}}
+    run: bash {{ops_dir}}/checks/ios-guard.sh docs-leak {{repo}}

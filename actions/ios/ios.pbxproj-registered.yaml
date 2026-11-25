@@ -16,4 +16,4 @@ steps:
 postconditions:
   - kind: cmd.exit0
     timeout_s: 30
-    run: bash /root/ops/checks/ios-guard.sh pbxproj {{repo}}
+    run: bash {{ops_dir}}/checks/ios-guard.sh pbxproj {{repo}}

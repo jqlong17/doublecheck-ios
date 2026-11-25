@@ -441,7 +441,8 @@ def main():
     if not target:
         print("找不到动作 %s" % name)
         return 2
-    merged = dict(target.get("params") or {})
+    merged = {"ops_dir": ROOT}          # 内建参数：动作可以引用自己的脚本，跨机器部署也不会写死路径
+    merged.update(target.get("params") or {})
     merged.update(params)
     params = merged
 

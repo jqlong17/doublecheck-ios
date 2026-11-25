@@ -1,0 +1,12 @@
+#!/bin/sh
+# doublecheck · iOS 提交前检查
+# 安装：把本文件复制到 .git/hooks/pre-commit 并 chmod +x
+# 跳过（仅在明知要跳过时）：git commit --no-verify
+set -e
+DC="${DC_BIN:-$HOME/ops/dc}"
+REPO="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ ! -x "$DC" ]; then
+  echo "doublecheck 未安装（找不到 $DC），跳过检查"
+  exit 0
+fi
+"$DC" ios check --fast --repo "$REPO"
