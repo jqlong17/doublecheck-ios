@@ -20,7 +20,28 @@ if (!res.ok) {
   console.error("拉取失败 HTTP", res.status)
   process.exit(1)
 }
-const { actions = [] } = await res.json()
+let { actions = [] } = await res.json()
+
+// --stack commit|build|release|ops|all：只装这一组
+const stackArg = process.argv.indexOf("--stack")
+if (stackArg > -1) {
+  const name = process.argv[stackArg + 1]
+  const STAGES = {
+    commit: ["commit"],
+    build: ["build", "test"],
+    release: ["build", "test", "release"],
+    ops: ["operate"],
+  }
+  if (name !== "all") {
+    const want = STAGES[name]
+    if (!want) {
+      console.error("未知 stack：%s（可选 commit / build / release / ops / all）", name)
+      process.exit(2)
+    }
+    actions = actions.filter((a) => want.includes(a.stage))
+  }
+  console.log("stack=%s → %d 个动作", name, actions.length)
+}
 
 let added = 0, updated = 0, same = 0, bad = 0
 for (const a of actions) {

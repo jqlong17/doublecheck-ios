@@ -175,7 +175,7 @@ export default {
     if (url.pathname === "/v1/actions" && request.method === "GET") {
       // ?full=1 一次返回全部 YAML：国内到 CF 的往返很贵，14 个请求会超时
       if (url.searchParams.get("full") === "1") {
-        const r = await env.DB.prepare("SELECT id, platform, version, yaml, sha256, signature FROM actions ORDER BY domain, id").all()
+        const r = await env.DB.prepare("SELECT id, platform, version, yaml, sha256, signature, stage, kind, summary FROM actions ORDER BY platform, id").all()
         return json(200, { actions: r.results || [] })
       }
       return json(200, { actions: await listActions(env) })

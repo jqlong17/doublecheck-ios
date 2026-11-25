@@ -135,3 +135,33 @@ DASH_URL=http://127.0.0.1:8790 ./dc sync
 - **证据只含**：动作 id、结果、耗时、参数键名。不含主机名、路径内容、输出原文
 - **离线优先**：上报失败不影响执行，队列留在本地
 - **不自动合并**：contribute 只是投递，是否入库由中央 CI 决定
+
+## 按场景装（stack）
+
+100 个动作不用一次全装。四个包：
+
+```bash
+dc stack                    # 看每个包有多少条
+dc pull --stack commit      # 提交前（55 条）
+dc pull --stack release     # 发版（14 条）
+dc pull --stack ops         # 服务器与网络体检（28 条）
+dc pull --stack all         # 全部
+```
+
+每个动作在 manifest 里有四个维度和它属于哪个阶段，`WORKFLOW.md` 是从这些元数据自动生成的
+「什么时候该跑哪条」索引——不要手改，跑 `python3 tools/gen-workflow.py` 重新生成。
+
+## 插件清单
+
+`plugin.json` 遵循 [agent-plugins.org](https://agent-plugins.org) 的 schema，
+声明了本仓库的 MCP server：
+
+```json
+"extensions": { "mcpServers": { "doublecheck": { "command": "doublecheck-mcp" } } }
+```
+
+## 相关项目
+
+- [MiniMax-AI/mcode-stack](https://github.com/MiniMax-AI/mcode-stack)：把团队在 AI 编程里
+  的判断写成 Skill。它的 `taste-to-checks` 说得很准——「`AGENTS.md` 里的文字会被读、也会被忽略，
+  失败的检查不会」。**我们就是那个「检查」的落点**：他们负责判断，我们负责执行与验证。

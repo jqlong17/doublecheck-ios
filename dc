@@ -7,7 +7,8 @@
 #   dc verify <action> [k=v ...]
 #   dc evidence [N]             看最近的本地证据
 #   dc ios check --fast|--build|--release   按时机跑 iOS 域检查
-#   dc pull                     从云端拉动作到本地缓存
+#   dc stack                    看有哪些动作分组（一次装一组）
+#   dc pull [--stack commit]    从云端拉动作到本地缓存
 #   dc push                     把本地动作推到云端（需要 DC_PUSH_TOKEN）
 #   dc extract                  从 worklog 的 incident/fix 提炼候选动作
 #   dc contribute <file.yaml>   提交一个动作到本地收件箱（有 DASH_URL 时同时上传）
@@ -75,6 +76,22 @@ PY2
     ;;
   pull)
     exec node "$HERE/tools/pull.mjs"
+    ;;
+  stack)
+    python3 - <<'PY2'
+import glob, os, re, sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath("dc")), "tools"))
+import stacks
+acts = []
+for p in glob.glob("actions/*/*.yaml"):
+    t = open(p, encoding="utf-8").read()
+    acts.append({"stage": (re.search(r"^stage:\s*(\S+)", t, re.M) or [None, ""])[1],
+                 "platform": os.path.basename(os.path.dirname(p)),
+                 "kind": (re.search(r"^kind:\s*(\S+)", t, re.M) or [None, ""])[1]})
+print("%-10s %-6s %s" % ("stack", "数量", "什么时候装"))
+for name, meta in stacks.STACKS.items():
+    print("%-10s %-6d %s" % (name, len(stacks.pick(acts, name)), meta["when"]))
+PY2
     ;;
   extract)
     exec python3 "$HERE/tools/extract-from-worklog.py"
