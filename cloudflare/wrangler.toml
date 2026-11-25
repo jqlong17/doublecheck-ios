@@ -14,12 +14,9 @@ database_name = "doublecheck"
 database_id = "e7d73982-68af-405f-a4ac-64e5ecf8f036"
 
 # workers.dev 在国内经常不可达，挂到自定义域名上（需要域名在同一个 Cloudflare 账号）
+# 只占一个一级子域名：doublecheck.notta.uk（Cloudflare 免费证书只覆盖一层子域名，
+# 二级如 api.doublecheck.notta.uk 拿不到证书；API 与看板用路径区分）
 [[routes]]
-pattern = "api.notta.uk"
-zone_name = "notta.uk"
-custom_domain = true
-
-[[routes]]
-pattern = "dash.notta.uk"
+pattern = "doublecheck.notta.uk"
 zone_name = "notta.uk"
 custom_domain = true
