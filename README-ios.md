@@ -19,11 +19,15 @@ dc ios check --fast --repo .  # 在你的 iOS 仓库根目录跑
 
 ## 三种时机
 
-| 时机 | 命令 | 耗时 | 用途 |
+| 阶段 | 命令 | 耗时 | 内容 |
 | --- | --- | --- | --- |
-| 提交前 | `dc ios check --fast` | < 3 秒 | 只读检查，不碰构建 |
-| 构建后 | `dc ios check --build` | 1–3 分钟 | 含模拟器编译 |
-| 发版前 | `dc ios check --release` | 3–10 分钟 | 含全新构建 |
+| 提交前 | `dc ios check --commit`（别名 `--fast`） | < 3 秒 | 只读：pbxproj、字号、密钥、shell 变量、l10n、索引 |
+| 构建 | `dc ios check --build` | 1–3 分钟 | 真编译：模拟器构建、全新构建 |
+| 测试 | `dc ios check --test` | 3–5 分钟 | UI 测试门禁（跳过的用例算没测） |
+| 发版 | `dc ios check --release` | 5–10 分钟 | 全部阶段 + build 号查重 + 代理检查 |
+
+每个动作在 manifest 里都有 `stage` 字段，`dc ios check` 按阶段挑选；
+只读动作走 `verify`，有实际步骤的动作走 `call --yes`（不执行等于没检查）。
 
 ## 接进工作流
 

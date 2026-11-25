@@ -238,6 +238,7 @@ def load_actions():
 REQUIRED = ["schemaVersion", "action", "summary", "incident", "preconditions", "steps", "postconditions"]
 ALLOWED_REQUIRES = {"linux", "macos", "xcode", "keychain", "network", "systemd"}
 ALLOWED_KINDS = {"invariant", "policy", "diagnostic"}
+ALLOWED_STAGES = {"commit", "build", "test", "release", "operate"}
 
 
 def lint_one(d):
@@ -262,6 +263,9 @@ def lint_one(d):
     k = d.get("kind")
     if k not in ALLOWED_KINDS:
         errs.append("kind 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_KINDS)), k))
+    st = d.get("stage")
+    if st not in ALLOWED_STAGES:
+        errs.append("stage 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_STAGES)), st))
     for r in (d.get("requires") or []):
         if r not in ALLOWED_REQUIRES:
             errs.append("未知 requires: %r" % r)
@@ -325,18 +329,27 @@ def do_plan(d, params, as_json=False):
     return 0 if ok else 1
 
 
-def do_call(d, params, yes):
-    if do_plan(d, params) != 0:   # 注意：0 才是通过（之前的 not 判断反了，一执行就中止）
+def do_call(d, params, yes, as_json=False):
+    global QUIET
+    QUIET = as_json
+    if do_plan(d, params, as_json=False) != 0:   # 注意：0 才是通过（之前的 not 判断反了，一执行就中止）
         print("中止：前置条件不满足")
         return 1
     if not yes:
-        print("\n（演练模式）加 --yes 才会真正执行步骤")
+        if as_json:
+            print(json.dumps({"action": d["action"], "dryRun": True, "ok": True}, ensure_ascii=False))
+        else:
+            print("\n（演练模式）加 --yes 才会真正执行步骤")
         return 0
-    print("\n执行步骤：")
+    step_results = []
+    if not QUIET:
+        print("\n执行步骤：")
     for s in d["steps"]:
         spec = fill(s, params)
         ok, msg = STEPS[spec["kind"]](spec)
-        print("  %s %s %s" % ("✅" if ok else "❌", spec["kind"], msg))
+        step_results.append({"kind": spec["kind"], "ok": bool(ok), "msg": msg})
+        if not QUIET:
+            print("  %s %s %s" % ("✅" if ok else "❌", spec["kind"], msg))
         if not ok:
             if d.get("rollback"):
                 print("  触发回滚：")
@@ -345,9 +358,13 @@ def do_call(d, params, yes):
                     rok, rmsg = STEPS[rs["kind"]](rs)
                     print("    %s %s %s" % ("✅" if rok else "❌", rs["kind"], rmsg))
             return 1
-    print("\n后置断言：")
-    ok = check_all(d["postconditions"], params, "验证结果")
-    print("  结论：%s" % ("成功" if ok else "步骤跑完但断言没过——按失败处理"))
+    checks = []
+    ok = check_all(d["postconditions"], params, "验证结果", checks)
+    if as_json:
+        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok,
+                          "steps": step_results, "checks": checks}, ensure_ascii=False))
+    else:
+        print("  结论：%s" % ("成功" if ok else "步骤跑完但断言没过——按失败处理"))
     return 0 if ok else 1
 
 
@@ -478,7 +495,7 @@ def main():
     if cmd == "plan":
         return do_plan(target, params, as_json)
     if cmd == "call":
-        return do_call(target, params, yes)
+        return do_call(target, params, yes, as_json)
     if cmd == "verify":
         return do_verify(target, params, as_json)
     print("未知命令 %s" % cmd)

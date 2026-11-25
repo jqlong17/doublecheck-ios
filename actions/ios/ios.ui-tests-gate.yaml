@@ -1,5 +1,6 @@
 schemaVersion: 1
 kind: policy
+stage: test
 action: ios.ui-tests-gate
 summary: 发版前必须真跑 UI 测试，跳过的用例单独报出来
 incident: |

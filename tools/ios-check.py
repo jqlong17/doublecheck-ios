@@ -34,22 +34,24 @@ def load():
     return out
 
 
+ALIAS = {"fast": "commit", "all": "release"}
+
+
 def tier_of(action, profile):
-    req = set(action.get("requires") or [])
-    if profile == "fast":
-        return not req
-    if profile == "build":
-        return not req or "xcode" in req
-    return True   # release: 全跑
+    """按生命周期阶段筛选：commit / build / test / release。"""
+    stage = action.get("stage", "commit")
+    if profile == "release":
+        return True          # 发版前把所有阶段都跑一遍
+    return stage == ALIAS.get(profile, profile)
 
 
 def main():
-    profile = "fast"
+    profile = "commit"
     repo = "."
     args = sys.argv[1:]
     for i, a in enumerate(args):
-        if a in ("--fast", "--build", "--release"):
-            profile = a[2:]
+        if a in ("--commit", "--build", "--test", "--release", "--fast"):
+            profile = "commit" if a == "--fast" else a[2:]
         if a == "--repo" and i + 1 < len(args):
             repo = args[i + 1]
 
@@ -68,7 +70,10 @@ def main():
     warned = []          # 策略失败 → 只提示（--strict 才阻断）
     strict = "--strict" in sys.argv[1:]
     for a in actions:
-        r = subprocess.run([sys.executable, OPS, "verify", a["action"], "--json", "repo=" + repo],
+        # 只读动作（全是 noop 步骤）跑 verify；有实际步骤的必须真执行，否则等于自欺欺人
+        read_only = all(st.get("kind") == "noop" for st in (a.get("steps") or []))
+        mode = ["verify", "--json"] if read_only else ["call", "--yes", "--json"]
+        r = subprocess.run([sys.executable, OPS, mode[0], a["action"], *mode[1:], "repo=" + repo],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            universal_newlines=True)
         import json as _json

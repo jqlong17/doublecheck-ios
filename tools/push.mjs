@@ -25,9 +25,12 @@ const items = files.map((path) => {
   const summary = m ? m[1].trim() : ""
   const km = yaml.match(/^kind:\s*(\S+)/m)
   const kind = km ? km[1] : "invariant"
+  const sm = yaml.match(/^stage:\s*(\S+)/m)
+  const stage = sm ? sm[1] : "operate"
   return {
     summary,
     kind,
+    stage,
     id,
     domain,
     version: "0.1.0",

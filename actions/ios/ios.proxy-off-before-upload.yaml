@@ -1,5 +1,6 @@
 schemaVersion: 1
 kind: policy
+stage: release
 action: ios.proxy-off-before-upload
 summary: 上传 App Store 前必须确认系统代理已关闭
 incident: |

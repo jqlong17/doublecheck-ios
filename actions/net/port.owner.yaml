@@ -1,5 +1,6 @@
 schemaVersion: 1
 kind: diagnostic
+stage: operate
 action: port.owner
 summary: 查某个端口被谁占用、绑在哪个地址（只读诊断）
 incident: |

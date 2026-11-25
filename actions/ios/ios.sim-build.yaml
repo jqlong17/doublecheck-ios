@@ -1,5 +1,6 @@
 schemaVersion: 1
 kind: invariant
+stage: build
 action: ios.sim-build
 summary: 在模拟器上编译 App（不签名），确认改动能通过编译
 incident: |
