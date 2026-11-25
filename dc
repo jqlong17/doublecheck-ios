@@ -25,7 +25,7 @@ HERE="$(cd "$(dirname "$SELF")" && pwd)"
 DC_HOME="${DC_HOME:-$HOME/.doublecheck}"
 EVIDENCE="$DC_HOME/evidence.jsonl"
 INBOX="$DC_HOME/inbox"
-DASH_URL="${DASH_URL:-}"
+DASH_URL="${DASH_URL:-$(python3 "$HERE/tools/dash-url.py" 2>/dev/null)}"
 
 mkdir -p "$DC_HOME" "$INBOX"
 
@@ -37,6 +37,11 @@ case "${1:-}" in
     # 执行/复检后，把结果同时写进 worklog 的 journal（同一份审计链）
     out=$(python3 "$HERE/ops.py" "$@" 2>&1); rc=$?
     printf '%s\n' "$out"
+    if [ -n "$DASH_URL" ]; then
+      # 上报事件（后台、失败不影响主流程）：谁在什么动作上，成功还是失败
+      # 同步上报但限时 3 秒：后台子进程在 ssh 退出时可能被回收，导致统计丢数
+      python3 "$HERE/tools/report-event.py" "$1" "$2" "$rc" "$DASH_URL" "${DC_AGENT_ID:-anonymous}" >/dev/null 2>&1 || true
+    fi
     if [ "${DC_JOURNAL:-1}" = "1" ] && [ -d "${WORKLOG:-/root/worklog}" ]; then
       python3 - "$1" "$2" "$rc" <<'PY2' || true
 import json, os, sys, datetime
@@ -86,6 +91,8 @@ PY2
     ;;
   sync)
     if [ -z "$DASH_URL" ]; then echo "需要 DASH_URL"; exit 2; fi
+    Q="$DC_HOME/events-queue.jsonl"
+    python3 "$HERE/tools/sync-events.py" "$DASH_URL" "$Q" || true
     if [ ! -s "$EVIDENCE" ]; then echo "没有待上报的证据"; exit 0; fi
     code=$(curl -sS -m 20 -o /dev/null -w '%{http_code}' -X POST \
       -H 'content-type: application/x-ndjson' --data-binary "@$EVIDENCE" \

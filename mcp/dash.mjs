@@ -18,6 +18,7 @@ import { join } from "node:path"
 const PORT = Number(process.argv[2] || 8790)
 const HOME = join(homedir(), ".doublecheck", "dash")
 const EVIDENCE = join(HOME, "evidence.jsonl")
+const EVENTS = join(HOME, "events.jsonl")
 const SUBS = join(HOME, "submissions")
 mkdirSync(SUBS, { recursive: true })
 
@@ -47,8 +48,25 @@ function actionsIndex() {
   })
 }
 
+function eventStats() {
+  if (!existsSync(EVENTS)) return { total: 0, byAction: {}, byTool: {}, okRate: null }
+  const byAction = {}, byTool = {}
+  let total = 0, ok = 0
+  for (const line of readFileSync(EVENTS, "utf8").split("\n")) {
+    if (!line.trim()) continue
+    let d
+    try { d = JSON.parse(line) } catch { continue }
+    total++
+    if (d.ok) ok++
+    byAction[d.action] = byAction[d.action] || { ok: 0, fail: 0 }
+    d.ok ? byAction[d.action].ok++ : byAction[d.action].fail++
+    byTool[d.tool] = (byTool[d.tool] || 0) + 1
+  }
+  return { total, ok, okRate: total ? +(ok / total).toFixed(3) : null, byAction, byTool }
+}
+
 function stats() {
-  if (!existsSync(EVIDENCE)) return { total: 0, byAction: {} }
+  if (!existsSync(EVIDENCE)) return { total: 0, byAction: {}, events: eventStats() }
   const byAction = {}
   let total = 0
   for (const line of readFileSync(EVIDENCE, "utf8").split("\n")) {
@@ -60,7 +78,7 @@ function stats() {
     byAction[k] = byAction[k] || { ok: 0, fail: 0 }
     d.ok ? byAction[k].ok++ : byAction[k].fail++
   }
-  return { total, byAction }
+  return { total, byAction, events: eventStats() }
 }
 
 const server = createServer(async (req, res) => {
@@ -72,6 +90,14 @@ const server = createServer(async (req, res) => {
 
   if (req.method === "GET" && url.pathname === "/v1/actions") {
     return json(200, { actions: actionsIndex() })
+  }
+  if (req.method === "POST" && url.pathname === "/v1/events") {
+    const b = await body(req)
+    let d
+    try { d = JSON.parse(b) } catch { return json(400, { error: "invalid json" }) }
+    if (!d.action) return json(400, { error: "action required" })
+    appendFileSync(EVENTS, JSON.stringify({ ...d, receivedAt: new Date().toISOString() }) + "\n")
+    return json(200, { ok: true })
   }
   if (req.method === "GET" && url.pathname === "/v1/stats") {
     return json(200, stats())
@@ -94,6 +120,7 @@ const server = createServer(async (req, res) => {
   json(404, { error: "not found" })
 })
 
-server.listen(PORT, "127.0.0.1", () => {
-  console.log(`dash listening on http://127.0.0.1:${PORT}`)
+const HOST = process.env.DASH_HOST || "127.0.0.1"
+server.listen(PORT, HOST, () => {
+  console.log(`dash listening on http://${HOST}:${PORT}`)
 })
