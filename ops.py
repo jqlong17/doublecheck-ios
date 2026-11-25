@@ -319,6 +319,26 @@ def do_verify(d, params, as_json=False):
     return 0 if ok else 1
 
 
+def build_fixture(src):
+    """把 fixture 目录复制到临时目录，按 .fixture.yaml 建一个 git 仓库。"""
+    import shutil as _sh
+    import tempfile
+    meta_path = os.path.join(src, ".fixture.yaml")
+    meta = {}
+    if os.path.exists(meta_path):
+        with open(meta_path, encoding="utf-8") as f:
+            meta = yaml.safe_load(f) or {}
+    base = tempfile.mkdtemp(prefix="dc-fixture-")
+    dst = os.path.join(base, "repo")
+    _sh.copytree(src, dst)   # py3.6 没有 dirs_exist_ok，复制到不存在的子目录
+    untracked = set(meta.get("untracked") or [])
+    _run("cd %s && git init -q && git add -A" % dst)
+    for u in untracked:
+        _run("cd %s && git rm --cached -q --ignore-unmatch %s" % (dst, u))
+    _run("cd %s && git -c user.name=fixture -c user.email=f@x commit -q -m init" % dst)
+    return dst
+
+
 def cmd_fixture_test(actions):
     """对声明了 fixture 的动作：在 dirty 上必须失败、在 clean 上必须通过。"""
     bad = checked = 0
@@ -331,7 +351,7 @@ def cmd_fixture_test(actions):
         dirty = [c for c in (d.get("postconditions") or [])]
         for label, path, expect_ok in (("dirty", fx["dirty"], False), ("clean", fx["clean"], True)):
             params = dict(d.get("params") or {})
-            params["repo"] = path
+            params["repo"] = build_fixture(path)
             ok = True
             for item in dirty:
                 spec = fill(item, params)

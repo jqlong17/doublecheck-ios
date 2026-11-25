@@ -1,0 +1,3 @@
+# 这些文件在 fixture 里保持"未跟踪"状态（模拟 git add 之前的新文件）
+untracked:
+  - DSHPocket/Views/NewView.swift

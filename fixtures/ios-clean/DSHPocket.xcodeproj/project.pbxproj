@@ -1,0 +1,3 @@
+// 两个都注册
+fileRef Old.swift
+fileRef NewView.swift
