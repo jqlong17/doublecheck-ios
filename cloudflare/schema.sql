@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS actions (
   version TEXT NOT NULL,
   yaml TEXT NOT NULL,
   sha256 TEXT NOT NULL,
+  signature TEXT,
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_actions_domain ON actions(domain);

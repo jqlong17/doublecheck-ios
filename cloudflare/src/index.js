@@ -39,7 +39,7 @@ const HTML = (stats, recent) => `<!doctype html>
   <div class="card"><div class="muted">总调用</div><div class="num">${stats.total}</div></div>
   <div class="card"><div class="muted">成功率</div><div class="num ${stats.okRate >= 0.9 ? "ok" : "bad"}">${stats.okRate == null ? "—" : Math.round(stats.okRate * 100) + "%"}</div></div>
   <div class="card"><div class="muted">今日</div><div class="num">${stats.today}</div></div>
-  <div class="card"><div class="muted">覆盖动作</div><div class="num">${stats.byAction.length}</div></div>
+  <div class="card"><div class="muted">云端动作</div><div class="num">${stats.actions}</div></div>
 </div>
 
 <h2>按动作</h2>
@@ -73,11 +73,26 @@ async function getAction(env, id) {
 async function putAction(env, a) {
   const now = new Date().toISOString()
   await env.DB.prepare(
-    `INSERT INTO actions (id, domain, version, yaml, sha256, updated_at) VALUES (?,?,?,?,?,?)
+    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, updated_at) VALUES (?,?,?,?,?,?,?)
      ON CONFLICT(id) DO UPDATE SET domain=excluded.domain, version=excluded.version,
-       yaml=excluded.yaml, sha256=excluded.sha256, updated_at=excluded.updated_at`
-  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, now).run()
+       yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature, updated_at=excluded.updated_at`
+  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, now).run()
   return now
+}
+
+async function verifySignature(pubPem, yaml, signatureB64) {
+  try {
+    // 支持两种存法：PEM（带 ----- 标记）或单行 base64 DER
+    const b64 = pubPem.includes("-----")
+      ? pubPem.replace(/-----[^-]+-----/g, "").replace(/\s+/g, "")
+      : pubPem.replace(/\s+/g, "")
+    const raw = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))
+    // SPKI 头 12 字节后是 32 字节原始公钥
+    const key = await crypto.subtle.importKey("raw", raw.slice(12), { name: "Ed25519" }, false, ["verify"])
+    return await crypto.subtle.verify("Ed25519", key, Uint8Array.from(atob(signatureB64), (c) => c.charCodeAt(0)), new TextEncoder().encode(yaml))
+  } catch {
+    return false
+  }
 }
 
 async function stats(env) {
@@ -88,6 +103,7 @@ async function stats(env) {
     "SELECT tool, COUNT(*) AS total FROM events GROUP BY tool ORDER BY total DESC"
   ).all()
   const total = await env.DB.prepare("SELECT COUNT(*) AS total, SUM(ok) AS ok FROM events").first()
+  const act = await env.DB.prepare("SELECT COUNT(*) AS n FROM actions").first()
   const today = await env.DB.prepare(
     "SELECT COUNT(*) AS n FROM events WHERE date(received_at) = date('now')"
   ).first()
@@ -96,6 +112,7 @@ async function stats(env) {
     total: total?.total ?? 0,
     okRate: total?.total ? total.ok / total.total : null,
     today: today?.n ?? 0,
+    actions: act?.n ?? 0,
     byAction: byAction.results || [],
     byTool: byTool.results || [],
   }
@@ -125,7 +142,7 @@ export default {
     if (url.pathname === "/v1/actions" && request.method === "GET") {
       // ?full=1 一次返回全部 YAML：国内到 CF 的往返很贵，14 个请求会超时
       if (url.searchParams.get("full") === "1") {
-        const r = await env.DB.prepare("SELECT id, domain, version, yaml, sha256 FROM actions ORDER BY domain, id").all()
+        const r = await env.DB.prepare("SELECT id, domain, version, yaml, sha256, signature FROM actions ORDER BY domain, id").all()
         return json(200, { actions: r.results || [] })
       }
       return json(200, { actions: await listActions(env) })
@@ -145,13 +162,18 @@ export default {
       let b
       try { b = await request.json() } catch { return json(400, { error: "invalid json" }) }
       const items = Array.isArray(b) ? b : [b]
+      const pubRow = await env.DB.prepare("SELECT value FROM meta WHERE key='pubkey'").first()
+      if (!pubRow?.value) return json(500, { error: "registry pubkey not configured" })
       let n = 0
+      const rejected = []
       for (const a of items) {
-        if (!a.id || !a.yaml || !a.sha256) continue
+        if (!a.id || !a.yaml || !a.sha256 || !a.signature) { rejected.push(a.id || "?"); continue }
+        const ok = await verifySignature(pubRow.value, a.yaml, a.signature)
+        if (!ok) { rejected.push(a.id); continue }
         await putAction(env, a)
         n++
       }
-      return json(200, { accepted: n })
+      return json(200, { accepted: n, rejected })
     }
 
     if (url.pathname === "/v1/recent") {

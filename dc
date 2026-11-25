@@ -71,10 +71,10 @@ PY2
     exec python3 "$HERE/tools/ios-check.py" "$@"
     ;;
   push)
-    exec python3 "$HERE/tools/push-actions.py"
+    exec node "$HERE/tools/push.mjs"
     ;;
   pull)
-    exec python3 "$HERE/tools/pull-actions.py"
+    exec node "$HERE/tools/pull.mjs"
     ;;
   extract)
     exec python3 "$HERE/tools/extract-from-worklog.py"

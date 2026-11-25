@@ -80,3 +80,16 @@ chmod +x .git/hooks/pre-commit
 | 0 | 全部通过 |
 | 1 | 有检查失败 |
 | 2 | 用法错误 / 环境问题 |
+
+## 动作分发（签名）
+
+```bash
+dc pull     # 从云端拉动作，逐个校验 sha256 + Ed25519 签名
+dc push     # 把本地动作签名后推到云端（需要 DC_PUSH_TOKEN）
+```
+
+- 私钥只在作者机器上：`~/.doublecheck/registry.key`（0600）
+- 公钥固定在仓库里：`keys/registry.pub`，拉取时用它验签
+- **验签失败的动作不会写入本地缓存**，`dc pull` 会列出被拒绝的 id
+
+这条是必须的：没有签名，中间人改一个 YAML 就等于让你的机器执行任意命令。
