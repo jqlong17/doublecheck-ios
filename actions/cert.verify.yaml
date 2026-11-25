@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: cert.verify
+summary: 检查某个域名的 TLS 证书还剩多少天（只读）
+incident: |
+  证书过期是典型的静默死亡：网站打不开才发现，而且往往发生在周末。
+  derper / nginx / DSH 三处都在用 TLS，需要一条命令能提前发现。
+params:
+  host: ruska.cn
+  days: 14
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cert.expiry_days
+    host: "{{host}}"
+    days: "{{days}}"

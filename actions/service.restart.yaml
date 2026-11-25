@@ -1,0 +1,27 @@
+schemaVersion: 1
+action: service.restart
+summary: 重启一个 systemd 服务，并确认端口和 HTTP 真的恢复
+incident: |
+  2026-11-25：Mac 上 DSH 进程还在，但 3093 端口没监听，tailscale serve 一直返回 502。
+  只重启进程、不验证端口，就会出现「进程起来了但服务没活」——这次是手机端完全连不上才发现的。
+params:
+  unit: dsh-web.service
+  port: 3080
+preconditions:
+  - kind: unit.exists
+    unit: "{{unit}}"
+  - kind: disk.free_mb_gt
+    mb: 200
+    path: /
+steps:
+  - kind: systemd.restart
+    unit: "{{unit}}"
+postconditions:
+  - kind: port.listening
+    port: "{{port}}"
+  - kind: http.status
+    url: "http://127.0.0.1:{{port}}/"
+    expect: [200, 401]
+rollback:
+  - kind: systemd.start
+    unit: "{{unit}}"

@@ -1,0 +1,16 @@
+schemaVersion: 1
+action: http.health
+summary: 检查一个 HTTP 端点是否返回预期状态码（只读）
+incident: |
+  2026-11-23：8443 的 DSH 端点被 tailscale serve 指向 3091，
+  但 443 被 nginx 占用，请求一直落到错误的证书上。健康检查要能看到「是谁在回答」。
+params:
+  url: http://127.0.0.1:3080/
+  expect: 401
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: http.status
+    url: "{{url}}"
+    expect: [200, 401, 403]
