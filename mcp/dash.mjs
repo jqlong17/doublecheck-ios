@@ -44,7 +44,7 @@ function actionsIndex() {
     const text = readFileSync(path, "utf8")
     const id = (text.match(/^action:\s*(\S+)/m) || [])[1] || f
     const summary = (text.match(/^summary:\s*(.+)$/m) || [])[1] || ""
-    return { id, domain: dom, summary, version: "0.1.0", status: "verified" }
+    return { id, platform: dom, summary, version: "0.1.0", status: "verified" }
   })
 }
 

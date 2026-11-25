@@ -19,7 +19,7 @@ const priv = createPrivateKey(readFileSync(keyPath, "utf8"))
 const files = globSync(join(ROOT, "actions", "*", "*.yaml"))
 const items = files.map((path) => {
   const yaml = readFileSync(path, "utf8")
-  const domain = basename(dirname(path))
+  const platform = basename(dirname(path))
   const id = basename(path, ".yaml")
   const m = yaml.match(/^summary:\s*(.+)$/m)
   const summary = m ? m[1].trim() : ""
@@ -35,7 +35,7 @@ const items = files.map((path) => {
     stage,
     area,
     id,
-    domain,
+    platform,
     version: "0.1.0",
     yaml,
     sha256: createHash("sha256").update(yaml).digest("hex"),

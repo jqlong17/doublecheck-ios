@@ -205,8 +205,8 @@ def load_actions():
     """动作来源有两处：
 
     1. 仓库内的 actions/<domain>/<name>.yaml（作者自己写的，优先级高）
-    2. ~/.doublecheck/actions/<domain>/<name>.yaml（dc pull 拉下来的云端版本）
-    domain 由目录推导，避免和字段写不一致。
+    2. ~/.doublecheck/actions/<platform>/<name>.yaml（dc pull 拉下来的云端版本）
+    platform 由目录推导，避免和字段写不一致。
     """
     out = []
     seen = set()
@@ -214,7 +214,7 @@ def load_actions():
         with open(path, encoding="utf-8") as f:
             d = yaml.safe_load(f)
         d["_path"] = path
-        d["domain"] = os.path.basename(os.path.dirname(path))
+        d["platform"] = os.path.basename(os.path.dirname(path))
         d["_source"] = "local"
         out.append(d)
         seen.add(d["action"])
@@ -229,7 +229,7 @@ def load_actions():
         if d.get("action") in seen:      # 本地同名动作优先
             continue
         d["_path"] = path
-        d["domain"] = os.path.basename(os.path.dirname(path))
+        d["platform"] = os.path.basename(os.path.dirname(path))
         d["_source"] = "cloud"
         out.append(d)
     return out
@@ -311,7 +311,7 @@ def do_plan(d, params, as_json=False):
     collected = []
     if as_json:
         ok = check_all(d["preconditions"], params, "前置条件", collected)
-        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok, "checks": collected,
+        print(json.dumps({"action": d["action"], "platform": d.get("platform"), "ok": ok, "checks": collected,
                           "steps": [fill(x, params) for x in d["steps"]],
                           "rollback": [fill(x, params) for x in (d.get("rollback") or [])]},
                          ensure_ascii=False))
@@ -365,7 +365,7 @@ def do_call(d, params, yes, as_json=False):
     checks = []
     ok = check_all(d["postconditions"], params, "验证结果", checks)
     if as_json:
-        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok,
+        print(json.dumps({"action": d["action"], "platform": d.get("platform"), "ok": ok,
                           "steps": step_results, "checks": checks}, ensure_ascii=False))
     else:
         print("  结论：%s" % ("成功" if ok else "步骤跑完但断言没过——按失败处理"))
@@ -378,7 +378,7 @@ def do_verify(d, params, as_json=False):
     collected = []
     ok = check_all(d["postconditions"], params, "后置断言", collected)
     if as_json:
-        print(json.dumps({"action": d["action"], "domain": d.get("domain"), "ok": ok, "checks": collected}, ensure_ascii=False))
+        print(json.dumps({"action": d["action"], "platform": d.get("platform"), "ok": ok, "checks": collected}, ensure_ascii=False))
     return 0 if ok else 1
 
 
@@ -450,8 +450,8 @@ def main():
         for d in actions:
             if want and d.get("domain") != want:
                 continue
-            if d.get("domain") != cur:
-                cur = d.get("domain")
+            if d.get("platform") != cur:
+                cur = d.get("platform")
                 print("\n[%s]" % cur)
             kind_mark = {"invariant": "●", "policy": "◇", "diagnostic": "○"}.get(d.get("kind"), "?")
             mark = "☁ " if d.get("_source") == "cloud" else "  "

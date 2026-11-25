@@ -30,7 +30,7 @@ for (const a of actions) {
   if (!a.signature || !verify(null, data, pub, Buffer.from(a.signature, "base64"))) {
     bad++; console.error("签名无效:", a.id); continue
   }
-  const path = join(CACHE, a.domain, a.id + ".yaml")
+  const path = join(CACHE, a.platform, a.id + ".yaml")
   if (existsSync(path)) {
     same += readFileSync(path, "utf8") === a.yaml ? 1 : (writeFileSync(path, a.yaml), updated++, 0)
   } else {

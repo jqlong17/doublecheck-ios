@@ -11,14 +11,14 @@
 
 const HTML = (stats, recent, actions) => {
   const counts = Object.fromEntries(stats.byAction.map((r) => [r.action, r]))
+  const PLATFORMS = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS" }
   const STAGES = { commit: "提交前", build: "构建", test: "测试", release: "发版", operate: "运行时" }
   const domains = {}
   for (const a of actions) {
-    domains[a.domain] = domains[a.domain] || {}
+    domains[a.platform] = domains[a.platform] || {}
     const st = a.stage || "operate"
-    ;(domains[a.domain][st] = domains[a.domain][st] || []).push(a)
+    ;(domains[a.platform][st] = domains[a.platform][st] || []).push(a)
   }
-  const domainTitle = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS" }
 
   const KIND = { invariant: ["●", "不变式"], policy: ["◇", "策略"], diagnostic: ["○", "诊断"] }
   const actionRows = (list) => list.map((a) => {
@@ -33,9 +33,9 @@ const HTML = (stats, recent, actions) => {
   const sections = Object.entries(domains).map(([d, byStage]) => {
     const total = Object.values(byStage).reduce((n, l) => n + l.length, 0)
     const inner = Object.entries(byStage).map(([st, list]) =>
-      `<h2>${domainTitle[d] || d} · ${STAGES[st] || st} <span class="muted">· ${list.length}</span></h2><table>${actionRows(list)}</table>`
+      `<h2>${PLATFORMS[d] || d} · ${STAGES[st] || st} <span class="muted">· ${list.length}</span></h2><table>${actionRows(list)}</table>`
     ).join("")
-    return `<h1 style="margin-top:28px">${domainTitle[d] || d} <span class="muted">· ${total}</span></h1>${inner}`
+    return `<h1 style="margin-top:28px">${PLATFORMS[d] || d} <span class="muted">· ${total}</span></h1>${inner}`
   }).join("")
 
   return `<!doctype html>
@@ -89,7 +89,7 @@ ${sections}
 }
 
 async function listActions(env) {
-  const r = await env.DB.prepare("SELECT id, domain, version, sha256, updated_at FROM actions ORDER BY domain, id").all()
+  const r = await env.DB.prepare("SELECT id, platform, version, sha256, updated_at FROM actions ORDER BY domain, id").all()
   return r.results || []
 }
 
@@ -100,12 +100,12 @@ async function getAction(env, id) {
 async function putAction(env, a) {
   const now = new Date().toISOString()
   await env.DB.prepare(
-    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, summary, kind, stage, area, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)
-     ON CONFLICT(id) DO UPDATE SET domain=excluded.domain, version=excluded.version,
+    `INSERT INTO actions (id, platform, version, yaml, sha256, signature, summary, kind, stage, area, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+     ON CONFLICT(id) DO UPDATE SET platform=excluded.platform, version=excluded.version,
        yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature,
        summary=excluded.summary, kind=excluded.kind, stage=excluded.stage,
        area=excluded.area, updated_at=excluded.updated_at`
-  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null,
+  ).bind(a.id, a.platform, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null,
          a.kind || "invariant", a.stage || "operate", a.area || "project", now).run()
   return now
 }
@@ -172,7 +172,7 @@ export default {
     if (url.pathname === "/v1/actions" && request.method === "GET") {
       // ?full=1 一次返回全部 YAML：国内到 CF 的往返很贵，14 个请求会超时
       if (url.searchParams.get("full") === "1") {
-        const r = await env.DB.prepare("SELECT id, domain, version, yaml, sha256, signature FROM actions ORDER BY domain, id").all()
+        const r = await env.DB.prepare("SELECT id, platform, version, yaml, sha256, signature FROM actions ORDER BY domain, id").all()
         return json(200, { actions: r.results || [] })
       }
       return json(200, { actions: await listActions(env) })
@@ -216,7 +216,7 @@ export default {
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const s = await stats(env)
       const r = await env.DB.prepare("SELECT ts, action, ok FROM events ORDER BY id DESC LIMIT 20").all()
-      const a = await env.DB.prepare("SELECT id, domain, summary, kind, stage, area FROM actions ORDER BY domain, stage, id").all()
+      const a = await env.DB.prepare("SELECT id, platform, summary, kind, stage, area FROM actions ORDER BY platform, stage, id").all()
       return new Response(HTML(s, r.results || [], a.results || []), {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       })
