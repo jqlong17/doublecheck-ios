@@ -1,0 +1,42 @@
+{
+  "name": "doublecheck",
+  "version": "0.1.0",
+  "description": "可审计的标准动作库：每个操作先预检、再执行、后复检",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "dc": "./dc",
+    "doublecheck-mcp": "./bin/doublecheck-mcp"
+  },
+  "files": [
+    "LICENSE",
+    "README-ios.md",
+    "README.md",
+    "actions",
+    "bin",
+    "checks",
+    "dc",
+    "fixtures",
+    "mcp",
+    "ops.py",
+    "packages",
+    "spec",
+    "templates",
+    "tools"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ops",
+    "agent",
+    "mcp",
+    "ios",
+    "assertions",
+    "audit"
+  ],
+  "scripts": {
+    "check": "bash ci/check.sh",
+    "mcp": "node mcp/server.mjs"
+  }
+}

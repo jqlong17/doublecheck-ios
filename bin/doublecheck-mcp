@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+// npm bin 包装：让客户端可以直接 `npx doublecheck-mcp` 或配置 command: "doublecheck-mcp"
+import { spawn } from "node:child_process"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+const here = dirname(fileURLToPath(import.meta.url))
+const server = join(here, "..", "mcp", "server.mjs")
+const child = spawn(process.execPath, [server], { stdio: "inherit" })
+child.on("exit", (code) => process.exit(code ?? 0))

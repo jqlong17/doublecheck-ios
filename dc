@@ -15,7 +15,13 @@
 #   DASH_URL   中央服务地址，例如 https://api.ruska.cn
 #   DC_HOME    默认 ~/.doublecheck
 set -uo pipefail
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 解析符号链接：通过 node_modules/.bin/dc 调用时，BASH_SOURCE 指向软链而非真实文件
+SELF="${BASH_SOURCE[0]}"
+while [ -L "$SELF" ]; do
+  TARGET="$(readlink "$SELF")"
+  case "$TARGET" in /*) SELF="$TARGET" ;; *) SELF="$(cd "$(dirname "$SELF")" && pwd)/$TARGET" ;; esac
+done
+HERE="$(cd "$(dirname "$SELF")" && pwd)"
 DC_HOME="${DC_HOME:-$HOME/.doublecheck}"
 EVIDENCE="$DC_HOME/evidence.jsonl"
 INBOX="$DC_HOME/inbox"

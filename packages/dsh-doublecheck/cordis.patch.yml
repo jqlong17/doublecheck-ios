@@ -1,0 +1,4 @@
+# dsh-doublecheck bundle patch
+- insert:
+    - id: dsh-doublecheck
+      name: dsh-doublecheck
