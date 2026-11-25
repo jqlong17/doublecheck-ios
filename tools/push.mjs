@@ -23,8 +23,11 @@ const items = files.map((path) => {
   const id = basename(path, ".yaml")
   const m = yaml.match(/^summary:\s*(.+)$/m)
   const summary = m ? m[1].trim() : ""
+  const km = yaml.match(/^kind:\s*(\S+)/m)
+  const kind = km ? km[1] : "invariant"
   return {
     summary,
+    kind,
     id,
     domain,
     version: "0.1.0",

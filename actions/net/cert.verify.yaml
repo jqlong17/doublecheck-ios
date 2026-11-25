@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: invariant
 action: cert.verify
 summary: 检查某个域名的 TLS 证书还剩多少天（只读）
 incident: |

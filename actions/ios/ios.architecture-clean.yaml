@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: policy
 action: ios.architecture-clean
 summary: 架构分层检查（文件行数、假拆分）必须为 0 违规
 incident: |

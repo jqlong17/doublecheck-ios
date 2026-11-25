@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: policy
 action: ios.tech-index
 summary: TECH_INDEX.md 里每条「文件 · 符号」必须仍然存在
 incident: |

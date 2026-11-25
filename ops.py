@@ -237,6 +237,7 @@ def load_actions():
 
 REQUIRED = ["schemaVersion", "action", "summary", "incident", "preconditions", "steps", "postconditions"]
 ALLOWED_REQUIRES = {"linux", "macos", "xcode", "keychain", "network", "systemd"}
+ALLOWED_KINDS = {"invariant", "policy", "diagnostic"}
 
 
 def lint_one(d):
@@ -258,6 +259,9 @@ def lint_one(d):
         errs.append("没有步骤")
     if not (d.get("postconditions") or []):
         errs.append("没有后置断言——做完无法判定成功")
+    k = d.get("kind")
+    if k not in ALLOWED_KINDS:
+        errs.append("kind 必须是 %s 之一（当前 %r）" % ("/".join(sorted(ALLOWED_KINDS)), k))
     for r in (d.get("requires") or []):
         if r not in ALLOWED_REQUIRES:
             errs.append("未知 requires: %r" % r)
@@ -428,8 +432,9 @@ def main():
             if d.get("domain") != cur:
                 cur = d.get("domain")
                 print("\n[%s]" % cur)
+            kind_mark = {"invariant": "●", "policy": "◇", "diagnostic": "○"}.get(d.get("kind"), "?")
             mark = "☁ " if d.get("_source") == "cloud" else "  "
-            print("  %s%-22s %s" % (mark, d["action"], d["summary"]))
+            print("  %s%s %-22s %s" % (mark, kind_mark, d["action"], d["summary"]))
         return 0
 
     if cmd == "fixture-test":

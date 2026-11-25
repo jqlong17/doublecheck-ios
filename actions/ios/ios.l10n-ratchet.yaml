@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: policy
 action: ios.l10n-ratchet
 summary: 本地化棘轮——不允许新增未翻译的中文字面量
 incident: |

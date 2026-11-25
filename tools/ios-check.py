@@ -64,7 +64,9 @@ def main():
         return 0
 
     print("doublecheck ios · %s · %d 项检查\n" % (profile, len(actions)))
-    failed = []
+    failed = []          # 不变式失败 → 阻断
+    warned = []          # 策略失败 → 只提示（--strict 才阻断）
+    strict = "--strict" in sys.argv[1:]
     for a in actions:
         r = subprocess.run([sys.executable, OPS, "verify", a["action"], "--json", "repo=" + repo],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -76,11 +78,22 @@ def main():
             detail = " ; ".join(c["msg"] for c in d.get("checks", []) if not c["ok"]) or "通过"
         except Exception:  # noqa: BLE001
             ok, detail = False, r.stdout.strip()[-120:]
-        print("%s %-26s %s" % ("✅" if ok else "❌", a["action"], detail[:80]))
+        kind = a.get("kind", "invariant")
+        if ok:
+            mark = "✅"
+        elif kind == "policy":
+            mark = "⚠️ "
+        else:
+            mark = "❌"
+        print("%s %-26s %s" % (mark, a["action"], detail[:80]))
         if not ok:
-            failed.append(a["action"])
+            (warned if kind == "policy" else failed).append(a["action"])
 
     print()
+    if warned:
+        print("策略未通过 %d 项（不阻断，--strict 才阻断）：%s" % (len(warned), ", ".join(warned)))
+    if strict:
+        failed += warned
     if failed:
         print("失败 %d 项：%s" % (len(failed), ", ".join(failed)))
         print("提示：每条检查防的是哪次事故，见 actions/ios/<名字>.yaml 的 incident 字段")

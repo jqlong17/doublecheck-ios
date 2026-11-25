@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: invariant
 action: ios.clean-build
 summary: 全新构建（清 derivedData），用于验证改了 DSHKit 之后的行为
 incident: |

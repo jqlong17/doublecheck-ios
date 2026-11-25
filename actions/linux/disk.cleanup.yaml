@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: invariant
 action: disk.cleanup
 summary: 清理已知的构建缓存目录，并在之后确认磁盘水位
 incident: |

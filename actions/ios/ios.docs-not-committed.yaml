@@ -1,9 +1,11 @@
 schemaVersion: 1
+kind: policy
 action: ios.docs-not-committed
 summary: docs/ 一律不入库
 incident: |
   2026-11-21 用户明确：docs 下的调研、宣传、参考源码只留本地，整体 gitignore。
   这条只有机器能守住——人一顺手就 git add 了。
+  注意：这是**项目策略**（kind: policy），不是客观对错；没有配置时不检查。
 requires: []
 params:
   repo: .
@@ -16,4 +18,4 @@ steps:
 postconditions:
   - kind: cmd.exit0
     timeout_s: 20
-    run: bash {{ops_dir}}/checks/ios-guard.sh docs-leak {{repo}}
+    run: python3 {{ops_dir}}/checks/policy-docs.py {{repo}}

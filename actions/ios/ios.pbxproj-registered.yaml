@@ -1,4 +1,5 @@
 schemaVersion: 1
+kind: invariant
 action: ios.pbxproj-registered
 summary: 新增的 .swift 文件必须已在 project.pbxproj 注册
 incident: |
