@@ -21,7 +21,10 @@ const items = files.map((path) => {
   const yaml = readFileSync(path, "utf8")
   const domain = basename(dirname(path))
   const id = basename(path, ".yaml")
+  const m = yaml.match(/^summary:\s*(.+)$/m)
+  const summary = m ? m[1].trim() : ""
   return {
+    summary,
     id,
     domain,
     version: "0.1.0",

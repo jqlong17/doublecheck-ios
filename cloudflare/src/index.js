@@ -9,57 +9,70 @@
  * 只存「谁在什么动作上、成功还是失败」，不存主机名、路径、输出。
  */
 
-const HTML = (stats, recent) => `<!doctype html>
+const HTML = (stats, recent, actions) => {
+  const counts = Object.fromEntries(stats.byAction.map((r) => [r.action, r]))
+  const domains = {}
+  for (const a of actions) (domains[a.domain] = domains[a.domain] || []).push(a)
+  const domainTitle = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS" }
+
+  const actionRows = (list) => list.map((a) => {
+    const c = counts[a.id]
+    const badge = c ? `<span class="pill ${c.fail ? "bad" : "ok"}">${c.total} 次${c.fail ? " · " + c.fail + " 失败" : ""}</span>` : `<span class="pill">未运行</span>`
+    return `<tr><td><div class="mono">${a.id}</div><div class="sub">${a.summary || ""}</div></td><td style="text-align:right;white-space:nowrap">${badge}</td></tr>`
+  }).join("") || '<tr><td class="muted">暂无</td></tr>'
+
+  const sections = Object.entries(domains).map(([d, list]) =>
+    `<h2>${domainTitle[d] || d} <span class="muted">· ${list.length}</span></h2><table>${actionRows(list)}</table>`
+  ).join("")
+
+  return `<!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>doublecheck 管理端</title>
 <style>
-  :root{--bg:#0b0f14;--card:#151b23;--fg:#e8eef6;--dim:#8b98a8;--ok:#3ddc84;--bad:#ff5c5c;--accent:#5aa9ff}
+  :root{--bg:#0b0f14;--card:#151b23;--fg:#e8eef6;--dim:#8b98a8;--ok:#3ddc84;--bad:#ff5c5c}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;padding:16px 16px 40px}
-  h1{font-size:20px;margin:4px 0 16px}
+  h1{font-size:20px;margin:4px 0 6px}
   .muted{color:var(--dim);font-size:13px}
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}
   .card{background:var(--card);border-radius:14px;padding:14px}
   .num{font-size:26px;font-weight:600;margin-top:4px}
   .ok{color:var(--ok)} .bad{color:var(--bad)}
-  h2{font-size:15px;margin:20px 0 8px;color:var(--dim);font-weight:500}
+  h2{font-size:14px;margin:22px 0 8px;color:var(--dim);font-weight:500}
   table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden}
-  td,th{padding:10px 12px;text-align:left;font-size:14px;border-bottom:1px solid #1f2733}
-  th{color:var(--dim);font-weight:500;font-size:12px}
+  td{padding:11px 12px;vertical-align:top;border-bottom:1px solid #1f2733;font-size:14px}
   tr:last-child td{border-bottom:none}
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+  .sub{color:var(--dim);font-size:13px;margin-top:3px;line-height:1.45}
+  .pill{display:inline-block;background:#1f2733;color:var(--dim);border-radius:999px;padding:3px 9px;font-size:12px}
+  .pill.ok{background:rgba(61,220,132,.14);color:var(--ok)}
+  .pill.bad{background:rgba(255,92,92,.14);color:var(--bad)}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
 </style></head><body>
 <h1>doublecheck 管理端</h1>
-<div class="muted">最近刷新 ${new Date(stats.now).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })} · 每 30 秒自动刷新</div>
+<div class="muted">刷新 ${new Date(stats.now).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })} · 30 秒自动刷新</div>
 
 <div class="grid">
   <div class="card"><div class="muted">总调用</div><div class="num">${stats.total}</div></div>
   <div class="card"><div class="muted">成功率</div><div class="num ${stats.okRate >= 0.9 ? "ok" : "bad"}">${stats.okRate == null ? "—" : Math.round(stats.okRate * 100) + "%"}</div></div>
   <div class="card"><div class="muted">今日</div><div class="num">${stats.today}</div></div>
-  <div class="card"><div class="muted">云端动作</div><div class="num">${stats.actions}</div></div>
+  <div class="card"><div class="muted">动作库</div><div class="num">${actions.length}</div></div>
 </div>
 
-<h2>按动作</h2>
-<table><tr><th>动作</th><th>成功</th><th>失败</th><th>合计</th></tr>
-${stats.byAction.map((r) => `<tr><td class="mono">${r.action}</td><td class="ok">${r.ok ?? 0}</td><td class="bad">${r.fail ?? 0}</td><td>${r.total}</td></tr>`).join("") || '<tr><td colspan="4" class="muted">还没有数据</td></tr>'}
-</table>
+${sections}
 
-<h2>按工具</h2>
-<table><tr><th>工具</th><th>次数</th></tr>
-${stats.byTool.map((r) => `<tr><td>${r.tool ?? "?"}</td><td>${r.total}</td></tr>`).join("") || '<tr><td colspan="2" class="muted">还没有数据</td></tr>'}
-</table>
+<h2>工具分布</h2>
+<table>${stats.byTool.map((r) => `<tr><td>${r.tool ?? "?"}</td><td style="text-align:right" class="muted">${r.total} 次</td></tr>`).join("") || '<tr><td class="muted">还没有数据</td></tr>'}</table>
 
 <h2>最近 20 条</h2>
-<table><tr><th>时间</th><th>动作</th><th>结果</th></tr>
-${recent.map((r) => `<tr><td class="mono">${String(r.ts).replace("T", " ").replace("Z", "").slice(5, 16)}</td><td class="mono">${r.action}</td><td>${r.ok ? '<span class="dot" style="background:var(--ok)"></span>成功' : '<span class="dot" style="background:var(--bad)"></span>失败'}</td></tr>`).join("") || '<tr><td colspan="3" class="muted">还没有数据</td></tr>'}
-</table>
+<table>${recent.map((r) => `<tr><td class="mono">${String(r.ts).replace("T", " ").replace("Z", "").slice(5, 16)}</td><td class="mono">${r.action}</td><td style="text-align:right">${r.ok ? '<span class="dot" style="background:var(--ok)"></span>成功' : '<span class="dot" style="background:var(--bad)"></span>失败'}</td></tr>`).join("") || '<tr><td class="muted">还没有数据</td></tr>'}</table>
 
 <p class="muted" style="margin-top:24px">只统计 tool / action / ok / agent 四个字段，不含主机名与输出。</p>
 <script>setTimeout(()=>location.reload(), 30000)</script>
 </body></html>`
+}
 
 async function listActions(env) {
   const r = await env.DB.prepare("SELECT id, domain, version, sha256, updated_at FROM actions ORDER BY domain, id").all()
@@ -73,10 +86,11 @@ async function getAction(env, id) {
 async function putAction(env, a) {
   const now = new Date().toISOString()
   await env.DB.prepare(
-    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, updated_at) VALUES (?,?,?,?,?,?,?)
+    `INSERT INTO actions (id, domain, version, yaml, sha256, signature, summary, updated_at) VALUES (?,?,?,?,?,?,?,?)
      ON CONFLICT(id) DO UPDATE SET domain=excluded.domain, version=excluded.version,
-       yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature, updated_at=excluded.updated_at`
-  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, now).run()
+       yaml=excluded.yaml, sha256=excluded.sha256, signature=excluded.signature,
+       summary=excluded.summary, updated_at=excluded.updated_at`
+  ).bind(a.id, a.domain, a.version, a.yaml, a.sha256, a.signature || null, a.summary || null, now).run()
   return now
 }
 
@@ -186,7 +200,8 @@ export default {
     if (url.pathname === "/" || url.pathname === "/index.html") {
       const s = await stats(env)
       const r = await env.DB.prepare("SELECT ts, action, ok FROM events ORDER BY id DESC LIMIT 20").all()
-      return new Response(HTML(s, r.results || []), {
+      const a = await env.DB.prepare("SELECT id, domain, summary FROM actions ORDER BY domain, id").all()
+      return new Response(HTML(s, r.results || [], a.results || []), {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       })
     }
