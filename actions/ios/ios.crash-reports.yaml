@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: diagnostic
+stage: operate
+area: project
+domain: runtime
+action: ios.crash-reports
+summary: 看最近 24 小时有没有 DSHPocket 的崩溃报告（只读）
+incident: |
+  真机闪退「修了还在」那次，起因是设备上跑的还是旧二进制；
+  崩溃报告就在本机，但没人先看一眼，直接去翻源码。
+area_hint: runtime
+requires: [macos]
+params: {}
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 20
+    run: python3 {{ops_dir}}/checks/crash-reports.py

@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: project
+domain: runtime
+action: ios.sim-app-version
+summary: 模拟器里已安装的 App 版本必须与仓库 Info.plist 一致
+incident: |
+  改完代码没重装，模拟器里还是旧二进制，表现成「改了没效果」，
+  然后开始怀疑代码——真机上更糟，连日志都对不上。
+requires: [macos, xcode]
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 30
+    run: python3 {{ops_dir}}/checks/sim-app-version.py {{repo}}
