@@ -4,6 +4,7 @@ summary: 清理已知的构建缓存目录，并在之后确认磁盘水位
 incident: |
   2026-11-23：根分区 41%，其中 .npm/_cacache 520M、.cache 314M、.cursor-server 449M。
   删缓存本身不难，难的是「只删缓存、别碰用户数据」——所以路径是白名单，且先算大小。
+requires: [linux]
 preconditions:
   - kind: disk.free_mb_gt
     mb: 100

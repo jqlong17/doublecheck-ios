@@ -17,7 +17,11 @@ for f in actions/*.yaml; do
     fail=1
     continue
   fi
-  if grep -qE "kind: (systemd\.restart|systemd\.start|fs\.prune|cmd\.run)" "$f"; then
+  if grep -q "^fixture:" "$f"; then
+    echo "✅ plan 通过（fixture 阶段验证）"
+  elif grep -q "repo:" "$f"; then
+    echo "✅ plan 通过（依赖目标仓库，由使用者本机执行）"
+  elif grep -qE "kind: (systemd\.restart|systemd\.start|fs\.prune|cmd\.run)" "$f"; then
     echo "✅ plan 通过（变更类动作，不执行）"
   else
     if python3 ops.py verify "$a" >/dev/null 2>&1; then
@@ -28,6 +32,10 @@ for f in actions/*.yaml; do
     fi
   fi
 done
+
+echo
+echo "== 3/3 fixture（dirty 必须失败 / clean 必须通过）=="
+python3 ops.py fixture-test || fail=1
 
 echo
 if [ "$fail" = "0" ]; then echo "CI 通过"; else echo "CI 失败"; fi

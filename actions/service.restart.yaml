@@ -7,6 +7,7 @@ incident: |
 params:
   unit: dsh-web.service
   port: 3080
+requires: [linux, systemd]
 preconditions:
   - kind: unit.exists
     unit: "{{unit}}"

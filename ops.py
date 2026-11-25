@@ -198,6 +198,7 @@ def load_actions():
 
 
 REQUIRED = ["schemaVersion", "action", "summary", "incident", "preconditions", "steps", "postconditions"]
+ALLOWED_REQUIRES = {"linux", "macos", "xcode", "keychain", "network", "systemd"}
 
 
 def lint_one(d):
@@ -219,6 +220,13 @@ def lint_one(d):
         errs.append("没有步骤")
     if not (d.get("postconditions") or []):
         errs.append("没有后置断言——做完无法判定成功")
+    for r in (d.get("requires") or []):
+        if r not in ALLOWED_REQUIRES:
+            errs.append("未知 requires: %r" % r)
+    fx = d.get("fixture") or {}
+    for k in ("dirty", "clean"):
+        if k in fx and not os.path.isdir(fx[k]):
+            errs.append("fixture.%s 路径不存在: %s" % (k, fx[k]))
     return errs
 
 
@@ -311,6 +319,36 @@ def do_verify(d, params, as_json=False):
     return 0 if ok else 1
 
 
+def cmd_fixture_test(actions):
+    """对声明了 fixture 的动作：在 dirty 上必须失败、在 clean 上必须通过。"""
+    bad = checked = 0
+    for d in actions:
+        fx = d.get("fixture") or {}
+        if not fx:
+            continue
+        checked += 1
+        name = d["action"]
+        dirty = [c for c in (d.get("postconditions") or [])]
+        for label, path, expect_ok in (("dirty", fx["dirty"], False), ("clean", fx["clean"], True)):
+            params = dict(d.get("params") or {})
+            params["repo"] = path
+            ok = True
+            for item in dirty:
+                spec = fill(item, params)
+                try:
+                    got, _ = PREDICATES[spec["kind"]](spec)
+                except Exception:  # noqa: BLE001
+                    got = False
+                ok = ok and got
+            good = (ok == expect_ok)
+            print("%-30s %-6s 期望%s 实际%s  %s" % (name, label, "通过" if expect_ok else "失败",
+                                                  "通过" if ok else "失败", "✅" if good else "❌"))
+            if not good:
+                bad += 1
+    print("\n%d 个动作带 fixture，%d 个用例不符合预期" % (checked, bad))
+    return 0 if bad == 0 else 1
+
+
 def main():
     args = sys.argv[1:]
     if not args or args[0] in ("-h", "--help"):
@@ -323,6 +361,9 @@ def main():
         for d in actions:
             print("%-22s %s" % (d["action"], d["summary"]))
         return 0
+
+    if cmd == "fixture-test":
+        return cmd_fixture_test(actions)
 
     if cmd == "lint":
         bad = 0
