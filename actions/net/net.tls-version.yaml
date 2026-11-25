@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: net.tls-version
+summary: TLS 至少 1.2
+incident: |
+  允许 1.0/1.1 等于接受已知不安全的套件，多数合规要求也早已禁止。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.tls-version {{repo}} host={{host}}

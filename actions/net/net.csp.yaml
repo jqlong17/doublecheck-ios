@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: policy
+stage: operate
+area: system
+domain: runtime
+action: net.csp
+summary: 建议配置 Content-Security-Policy
+incident: |
+  没有 CSP 的页面，一旦有注入点就能被加载任意脚本。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.csp {{repo}} host={{host}}

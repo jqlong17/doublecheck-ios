@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.string-format-multi
+summary: String(format:) 多参数要小心顺序
+incident: |
+  多个 %@ 的顺序错位会让文案张冠李戴，类型不匹配还会崩。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.string-format-multi {{repo}}

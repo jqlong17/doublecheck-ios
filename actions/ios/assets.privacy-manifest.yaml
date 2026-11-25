@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: release
+area: project
+domain: delivery
+action: assets.privacy-manifest
+summary: 要有 PrivacyInfo.xcprivacy
+incident: |
+  用到被列为 Required Reason 的 API 却缺隐私清单，提审会被拒。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py assets.privacy-manifest {{repo}}

@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.anyview
+summary: 避免 AnyView（拖慢 SwiftUI diff）
+incident: |
+  AnyView 擦除类型后 SwiftUI 无法做差异比较，列表里大量使用会明显掉帧。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.anyview {{repo}}

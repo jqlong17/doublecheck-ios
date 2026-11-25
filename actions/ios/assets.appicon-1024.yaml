@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: release
+area: project
+domain: delivery
+action: assets.appicon-1024
+summary: AppIcon 必须包含 1024 尺寸
+incident: |
+  缺 1024 图标，App Store 上传直接拒；本地打包却完全正常，很容易漏。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py assets.appicon-1024 {{repo}}

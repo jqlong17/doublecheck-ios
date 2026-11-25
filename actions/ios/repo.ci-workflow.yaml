@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: engineering
+action: repo.ci-workflow
+summary: 仓库要有 CI 配置
+incident: |
+  没有 CI 的仓库，检查只能靠本地自觉；本地一忙就跳过。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py repo.ci-workflow {{repo}}

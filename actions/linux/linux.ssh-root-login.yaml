@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: linux.ssh-root-login
+summary: 禁止 root 直接 SSH 登录
+incident: |
+  root 直连等于把最高权限暴露在公网，弱口令扫描第一个撞的就是它。
+requires: [linux]
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py linux.ssh-root-login {{repo}}

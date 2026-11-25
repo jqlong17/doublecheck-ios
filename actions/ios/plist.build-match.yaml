@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: quality
+action: plist.build-match
+summary: build 号必须在 Info.plist 与工程设置中一致
+incident: |
+  CFBundleVersion 和 CURRENT_PROJECT_VERSION 不一致，上传后查到的 build 号和预期对不上。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py plist.build-match {{repo}}

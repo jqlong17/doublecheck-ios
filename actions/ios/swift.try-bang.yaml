@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.try-bang
+summary: 禁止 try!（崩了就是线上崩溃）
+incident: |
+  try! 把可恢复的错误变成崩溃。一次网络抖动就能让 App 直接挂掉，而且只藏在一行里，review 很容易漏。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.try-bang {{repo}}

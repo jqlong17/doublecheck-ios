@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: net.dns-resolves
+summary: 域名必须能解析
+incident: |
+  解析失败时所有依赖它的服务一起挂，而日志里只会写「连接失败」。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.dns-resolves {{repo}} host={{host}}

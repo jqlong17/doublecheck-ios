@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.notification-string
+summary: 通知名不要用裸字符串
+incident: |
+  字符串通知名拼错不会报错，只是永远收不到。用 Notification.Name 常量。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.notification-string {{repo}}

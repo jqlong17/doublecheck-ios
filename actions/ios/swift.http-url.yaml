@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.http-url
+summary: 代码里不允许出现 http:// 明文地址
+incident: |
+  iOS 默认禁止明文 HTTP（ATS）。写死 http:// 要么被系统拦掉，要么逼你在 Info.plist 里开例外。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.http-url {{repo}}

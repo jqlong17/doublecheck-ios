@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: plist.bg-audio
+summary: 用到音频后台播放要声明 background mode
+incident: |
+  没声明 audio 后台模式，锁屏就会被系统挂起，播放十几秒后停住。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py plist.bg-audio {{repo}}

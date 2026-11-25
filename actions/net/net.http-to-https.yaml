@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: net.http-to-https
+summary: HTTP 必须跳转到 HTTPS
+incident: |
+  不跳转时用户可能一直用明文访问，凭据和内容都在裸奔。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.http-to-https {{repo}} host={{host}}

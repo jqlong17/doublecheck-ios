@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: policy
+stage: operate
+area: system
+domain: runtime
+action: net.server-header
+summary: 隐藏服务器版本信息
+incident: |
+  Server 头暴露 nginx 版本，等于告诉扫描器该用哪个已知漏洞。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.server-header {{repo}} host={{host}}

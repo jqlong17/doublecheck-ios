@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: policy
+stage: operate
+area: system
+domain: runtime
+action: net.xcto
+summary: 响应要带 X-Content-Type-Options
+incident: |
+  缺 nosniff 时，浏览器可能把 JSON 当脚本执行，构成 XSS 的入口。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.xcto {{repo}} host={{host}}

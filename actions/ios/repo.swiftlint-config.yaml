@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: engineering
+action: repo.swiftlint-config
+summary: 建议有 SwiftLint / SwiftFormat 配置
+incident: |
+  风格类问题机器管比人管便宜。没有配置文件的仓库，review 会反复吵同一件事。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py repo.swiftlint-config {{repo}}

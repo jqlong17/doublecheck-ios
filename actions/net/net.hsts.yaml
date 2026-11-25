@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: policy
+stage: operate
+area: system
+domain: runtime
+action: net.hsts
+summary: HTTPS 响应要带 HSTS
+incident: |
+  没有 HSTS，首次访问仍可能被降级劫持；加上之后浏览器会强制走 HTTPS。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.hsts {{repo}} host={{host}}

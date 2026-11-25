@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.weak-self
+summary: 逃逸闭包引用 self 时要显式声明捕获列表
+incident: |
+  忘了 [weak self] 的闭包会持有 self，页面关不掉、内存持续上涨。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.weak-self {{repo}}

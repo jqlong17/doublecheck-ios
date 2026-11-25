@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: net.cert-chain
+summary: 证书链必须完整
+incident: |
+  缺中间证书时，浏览器能开（会自己补），但 App 和 curl 会校验失败——最典型的「我这儿好好的」。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.cert-chain {{repo}} host={{host}}

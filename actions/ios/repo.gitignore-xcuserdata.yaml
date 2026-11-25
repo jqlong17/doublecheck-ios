@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: engineering
+action: repo.gitignore-xcuserdata
+summary: .gitignore 必须包含 xcuserdata
+incident: |
+  漏掉 xcuserdata 时，每个人的 Xcode 窗口状态都会被提交，冲突不断。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py repo.gitignore-xcuserdata {{repo}}

@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: quality
+action: plist.version-match
+summary: 版本号必须在 Info.plist 与工程设置中一致
+incident: |
+  CFBundleShortVersionString 和 MARKETING_VERSION 不一致，商店显示的版本和代码里的不是一回事。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py plist.version-match {{repo}}

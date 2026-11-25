@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: quality
+action: swift.uiwebview
+summary: 禁止使用已废弃的 UIWebView
+incident: |
+  UIWebView 已被 App Store 拒绝，且存在已知安全漏洞。用 WKWebView。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.uiwebview {{repo}}

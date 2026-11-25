@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: operate
+area: system
+domain: runtime
+action: linux.logrotate
+summary: 日志必须配置轮转
+incident: |
+  不轮转的日志迟早把磁盘写满，而写满时最先失效的往往是数据库。
+requires: [linux]
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py linux.logrotate {{repo}}

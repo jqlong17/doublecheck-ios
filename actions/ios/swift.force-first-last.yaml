@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.force-first-last
+summary: 谨慎使用 .first! / .last!
+incident: |
+  数组为空时 .first! 直接崩。这类崩溃只在特定数据下出现，测试很难覆盖。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.force-first-last {{repo}}

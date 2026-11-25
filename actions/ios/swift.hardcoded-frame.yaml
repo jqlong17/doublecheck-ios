@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.hardcoded-frame
+summary: 避免写死 frame 尺寸
+incident: |
+  写死的宽度在不同机型上不是溢出就是留白，应该用布局约束或自适应。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.hardcoded-frame {{repo}}

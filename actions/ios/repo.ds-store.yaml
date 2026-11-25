@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: invariant
+stage: commit
+area: project
+domain: engineering
+action: repo.ds-store
+summary: .DS_Store 不能进仓库
+incident: |
+  macOS 生成的 .DS_Store 是二进制垃圾，进仓库后每次改目录都产生无意义 diff。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py repo.ds-store {{repo}}

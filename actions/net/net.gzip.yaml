@@ -1,0 +1,20 @@
+schemaVersion: 1
+kind: policy
+stage: operate
+area: system
+domain: runtime
+action: net.gzip
+summary: 文本响应要开启压缩
+incident: |
+  不压缩的 JSON/HTML 体积是压缩后的 3-5 倍，移动网络下首屏明显变慢。
+requires: [network]
+params:
+  repo: .
+  host: ruska.cn
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py net.gzip {{repo}} host={{host}}

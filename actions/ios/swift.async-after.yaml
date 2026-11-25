@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: commit
+area: project
+domain: quality
+action: swift.async-after
+summary: 慎用 asyncAfter 做时序控制
+incident: |
+  固定延时在慢设备上不够、在快设备上浪费，而且和视图生命周期无关，容易在已销毁的视图上执行。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py swift.async-after {{repo}}

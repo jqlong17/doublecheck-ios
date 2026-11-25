@@ -1,0 +1,19 @@
+schemaVersion: 1
+kind: policy
+stage: release
+area: project
+domain: delivery
+action: git.clean-tree
+summary: 发版前工作区必须干净
+incident: |
+  带着未提交改动打包，包里到底是什么代码没人说得清，出问题也无法复现。
+requires: []
+params:
+  repo: .
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 60
+    run: python3 {{ops_dir}}/checks/rules.py git.clean-tree {{repo}}
