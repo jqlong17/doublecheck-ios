@@ -1,16 +1,24 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "doublecheck-ios",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "写 iOS 时 AI 最容易踩的 100 个坑，一条命令全查。每个动作带前置条件、后置断言与回滚；平台 ios/linux/net，阶段提交前/构建/测试/发版，类型不变式/策略/诊断。",
   "author": {
     "name": "longjiaqiuu",
     "url": "https://github.com/jqlong17"
   },
-  "homepage": "https://dash.notta.uk",
+  "homepage": "https://doublecheck.notta.uk",
   "repository": "https://github.com/jqlong17/doublecheck-ios",
   "license": "MIT",
-  "keywords": ["ios", "swift", "xcode", "mcp", "dsh-plugin", "code-review", "assertions"],
+  "keywords": [
+    "ios",
+    "swift",
+    "xcode",
+    "mcp",
+    "dsh-plugin",
+    "code-review",
+    "assertions"
+  ],
   "extensions": {
     "mcpServers": {
       "doublecheck": {

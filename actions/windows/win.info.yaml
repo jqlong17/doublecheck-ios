@@ -1,0 +1,21 @@
+schemaVersion: 1
+kind: diagnostic
+stage: operate
+area: system
+domain: runtime
+action: win.info
+summary: 查看 Windows 机器的系统、开机时长、系统盘余量与可用内存（只读）
+incident: |
+  2026-11-26 把一台 Windows 加入 tailnet 后，第一件事是确认「这台机器现在什么状态」：
+  系统版本、开了多久（长期不重启会累积问题）、盘还剩多少、内存够不够。
+  用 SSH 一条命令拿全，比远程桌面点开设置页快得多。
+requires: [network]
+params:
+  host: win
+preconditions: []
+steps:
+  - kind: noop
+postconditions:
+  - kind: cmd.exit0
+    timeout_s: 25
+    run: bash {{ops_dir}}/checks/win-info.sh {{host}}

@@ -151,6 +151,17 @@ dc pull --stack all         # 全部
 每个动作在 manifest 里有四个维度和它属于哪个阶段，`WORKFLOW.md` 是从这些元数据自动生成的
 「什么时候该跑哪条」索引——不要手改，跑 `python3 tools/gen-workflow.py` 重新生成。
 
+## 线上服务
+
+| 用途 | 地址 |
+| --- | --- |
+| 管理端（跑了几次、成功多少） | https://doublecheck.notta.uk/ |
+| 动作分发 API | https://doublecheck.notta.uk/v1/actions |
+| 用量上报 | POST https://doublecheck.notta.uk/v1/events |
+
+> 只占 `notta.uk` 的一个一级子域名。Cloudflare 免费证书只覆盖一层，
+> 所以 API 和看板用路径区分，不再拆 `api.` / `dash.` 二级域名。
+
 ## 插件清单
 
 `plugin.json` 遵循 [agent-plugins.org](https://agent-plugins.org) 的 schema，

@@ -11,7 +11,7 @@
 
 const HTML = (stats, recent, actions) => {
   const counts = Object.fromEntries(stats.byAction.map((r) => [r.action, r]))
-  const PLATFORMS = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS" }
+  const PLATFORMS = { ios: "iOS", linux: "Linux / systemd", net: "网络 / TLS", windows: "Windows" }
   const STAGES = { commit: "提交前", build: "构建", test: "测试", release: "发版", operate: "运行时" }
   const DOMAINS = { quality: "代码质量", delivery: "交付发布", runtime: "运行时", engineering: "工程配置" }
   const groups = {}

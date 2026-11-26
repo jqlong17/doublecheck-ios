@@ -6,7 +6,7 @@ import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PLATFORM = {"ios": "iOS", "linux": "Linux / systemd", "net": "网络 / TLS"}
+PLATFORM = {"ios": "iOS", "linux": "Linux / systemd", "net": "网络 / TLS", "windows": "Windows"}
 STAGE = {"commit": "提交前", "build": "构建", "test": "测试", "release": "发版", "operate": "运行时"}
 KIND = {"invariant": "●", "policy": "◇", "diagnostic": "○"}
 COMMAND = {
@@ -34,7 +34,7 @@ def main():
     lines = ["# WORKFLOW · 什么时候该跑哪条", "",
              "> 由 `tools/gen-workflow.py` 从动作元数据生成，不要手改。", ""]
 
-    for platform in ("ios", "linux", "net"):
+    for platform in ("ios", "linux", "net", "windows"):
         items = [a for a in actions if a["platform"] == platform]
         if not items:
             continue
